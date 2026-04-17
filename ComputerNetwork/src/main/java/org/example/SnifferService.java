@@ -6,6 +6,7 @@ import org.pcap4j.core.PcapNetworkInterface;
 import org.pcap4j.packet.Packet;
 
 import java.io.EOFException;
+import java.sql.Timestamp;
 import java.util.concurrent.TimeoutException;
 
 public class SnifferService {
@@ -24,10 +25,10 @@ public class SnifferService {
             while(true){
                 try{
                     Packet packet = handle.getNextPacketEx();
+                    Timestamp timestamp = handle.getTimestamp();
 
-                    String protocol = analyzer.detectProtocol(packet);
+                    System.out.println(timestamp + " | " + analyzer.analyzePacket(packet));
 
-                    System.out.println("Packet captured: " + packet.length() + " bytes " + "| " + "Protocol: " + protocol);
                 } catch (NotOpenException e) {
                     throw new RuntimeException(e);
                 } catch (EOFException e) {
@@ -39,7 +40,8 @@ public class SnifferService {
             }
 
         } catch (PcapNativeException e) {
-            throw new RuntimeException(e); //openLive
+            System.out.println("Error opening interface for capture. Check permissions.");
+            e.printStackTrace();
         }
     }
 }
