@@ -1,4 +1,4 @@
-package org.example;
+package sniffer;
 
 import org.pcap4j.core.*;
 
