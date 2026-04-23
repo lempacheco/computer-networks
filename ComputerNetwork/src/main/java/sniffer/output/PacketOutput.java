@@ -1,118 +1,112 @@
 package sniffer.output;
 
-import sniffer.PacketAnalyzer;
-import sniffer.PacketInfo;
+import sniffer.model.PacketInfo;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 public class PacketOutput {
 
-    private boolean liveMode;
+    private boolean livMode;
     private boolean logMode;
-    private String format;
-    private BufferedWriter output;
-    private boolean csvHeader;
+    private String logFormat;
+    private BufferedWriter writer;
+    private PacketFormatter formatter;
 
-    public PacketOutput(boolean liveMode, boolean logMode, String format, BufferedWriter output){
-        this.liveMode = liveMode;
+    public PacketOutput(boolean livMode, boolean logMode, String logFormat, String logFileName){
+        this.livMode = livMode;
+        this.logFormat = normalize(logFormat);
         this.logMode = logMode;
-        this.format = format;
-        this.output = output;
-    }
-
-
-    public void writeOutput(PacketInfo info) {
-        if (liveMode) {
-            System.out.println(formatTxt(info));
-        }
+        this.formatter = new PacketFormatter();
 
         if (logMode) {
-            writeToFile(info);
-        }
-    }
-
-    public void writeToFile(PacketInfo info){
-        if (this.output == null) return;
-
-        try {
-            if(this.format.equalsIgnoreCase("csv")){
-                if(!csvHeader){
-                    output.write("timestamp,interface,protocol,src,dst,length,summary");
-                    output.newLine();
-                    csvHeader = true;
-                }
-                output.write(formatCsv(info));
-            } else if (this.format.equalsIgnoreCase("json")){
-                output.write(formatJson(info));
-            } else {
-                output.write(formatTxt(info));
+            try {
+                this.writer = new BufferedWriter(new FileWriter(logFileName, true));
+                writeHeader();
+            } catch (IOException e) {
+                throw new UncheckedIOException("Erro ao abrir ficheiro de log: " + logFileName, e);
             }
+        } else {
+            this.writer = null;
+        }
 
-            output.newLine();
-            output.flush();
 
-        } catch (IOException e) {
-            System.out.println("Error writing packet to file.");
-            e.printStackTrace();
+    }
+
+    public void write(PacketInfo info){
+        String formattedPacket = format(info);
+
+        if(livMode){
+            System.out.println(formattedPacket);
+        }
+
+        if(logMode && writer != null){
+            try{
+                writer.write(formattedPacket);
+                writer.newLine();
+                writer.flush();
+            } catch (IOException e) {
+            throw new UncheckedIOException("Erro ao escrever no ficheiro de log.", e);
+            }
+        }
+    }
+
+    public String format(PacketInfo info){
+        String result;
+
+        switch (logFormat) {
+            case "csv":
+                result = formatter.formatCsv(info);
+                break;
+            case "json":
+                result = formatter.formatJson(info);
+                break;
+            default:
+                result = formatter.formatTxt(info);
+                break;
+        }
+
+        return result;
+    }
+
+    private void writeHeader() throws IOException {
+        if (!logMode || writer == null) {
+            return;
+        }
+
+        if ("csv".equals(logFormat)) {
+            writer.write("timestamp,interface,protocol,srcMac,dstMac,srcIp,dstIp,srcPort,dstPort,length,summary");
+            writer.newLine();
+            writer.flush();
         }
     }
 
 
-    public String formatTxt(PacketInfo info) {
-        String src = info.getSrcIp() != null ? info.getSrcIp() : "-";
-        String dst = info.getDstIp() != null ? info.getDstIp() : "-";
+    public void close(){
+        if(writer != null){
+            try {
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-        if (info.getSrcPort() != null && info.getDstPort() != null) {
-            src = src + ":" + info.getSrcPort();
-            dst = dst + ":" + info.getDstPort();
+    private String normalize(String format) {
+        if (format == null || format.isBlank()) {
+            return "txt";
         }
 
-        return info.getTimestamp()
-                + " | " + info.getInterfaceName()
-                + " | " + info.getProtocol()
-                + " | " + src + " -> " + dst
-                + " | len=" + info.getLength()
-                + " | " + info.getSummary();
+        String normalized = format.trim().toLowerCase();
+
+        if (normalized.equals("txt") || normalized.equals("csv") || normalized.equals("json")) {
+            return normalized;
+        }
+
+        return "txt";
     }
 
 
-    public String formatCsv(PacketInfo info) {
-        String src = info.getSrcIp() != null ? info.getSrcIp() : "-";
-        String dst = info.getDstIp() != null ? info.getDstIp() : "-";
-
-        if (info.getSrcPort() != null && info.getDstPort() != null) {
-            src = src + ":" + info.getSrcPort();
-            dst = dst + ":" + info.getDstPort();
-        }
-
-        return info.getTimestamp() + ","
-                + info.getInterfaceName() + ","
-                + info.getProtocol() + ","
-                + src + ","
-                + dst + ","
-                + info.getLength() + ","
-                + info.getSummary();
-    }
-
-    public String formatJson(PacketInfo info){
-        String src = info.getSrcIp() != null ? info.getSrcIp() : "-";
-        String dst = info.getDstIp() != null ? info.getDstIp() : "-";
-
-        if(info.getSrcPort() != null && info.getDstIp() != null){
-            src += ":" + info.getSrcPort();
-            dst += ":" + info.getDstPort();
-        }
-
-        return "{"
-                + "\"timestamp\":\"" + info.getTimestamp() + "\","
-                + "\"interface\":\"" + info.getInterfaceName() + "\","
-                + "\"protocol\":\"" + info.getProtocol() + "\","
-                + "\"src\":\"" + src + "\","
-                + "\"dst\":\"" + dst + "\","
-                + "\"length\":" + info.getLength() + ","
-                + "\"summary\":\"" + info.getSummary() + "\""
-                + "}";
-    }
 }

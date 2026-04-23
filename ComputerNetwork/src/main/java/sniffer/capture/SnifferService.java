@@ -1,4 +1,4 @@
-package sniffer;
+package sniffer.capture;
 
 import org.pcap4j.core.*;
 import org.pcap4j.packet.Packet;
@@ -14,13 +14,20 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeoutException;
 
+import sniffer.analysis.*;
+import sniffer.model.*;
+import sniffer.output.*;
+
 public class SnifferService {
+
+    private static final int SNAP_LEN = 65536;
+    private static final int READ_TIMEOUT_MILLIS = 10;
 
     public void startSniffing(PcapNetworkInterface nif,
                               boolean liveMode,
                               boolean logMode,
-                              String format,
-                              String filename) {
+                              String logFormat,
+                              String logFileName) {
 
         if (nif == null) {
             System.out.println("No interface selected.");
@@ -28,28 +35,17 @@ public class SnifferService {
         }
 
         PacketAnalyzer analyzer = new PacketAnalyzer();
-        BufferedWriter output = null;
-        PacketOutput packetOutput = null;
 
         try {
-            if (logMode) {
-                output = new BufferedWriter(new FileWriter(filename, true));
-            }
+            PcapNetworkInterface.PromiscuousMode mode = PcapNetworkInterface.PromiscuousMode.PROMISCUOUS;
+            PcapHandle handle = nif.openLive(SNAP_LEN, mode, READ_TIMEOUT_MILLIS);
 
-            packetOutput = new PacketOutput(liveMode, logMode, format, output);
-
-            int snapLen = 65536;
-            int timeout = 10;
-            PcapNetworkInterface.PromiscuousMode mode =
-                    PcapNetworkInterface.PromiscuousMode.PROMISCUOUS;
-
-            PcapHandle handle = nif.openLive(snapLen, mode, timeout);
+            PacketOutput packetOutput = new PacketOutput(liveMode, logMode, logFormat, logFileName);
 
             System.out.println("Sniffing on: " + nif.getName());
+            System.out.println("Press Ctrl+C to stop.");
 
-            boolean running = true;
-
-            while (running) {
+            while (true) {
                 try {
                     Packet packet = handle.getNextPacketEx();
                     Timestamp ts = handle.getTimestamp();
@@ -58,21 +54,17 @@ public class SnifferService {
                     info.setTimestamp(formatTimestamp(ts));
                     info.setInterfaceName(nif.getName());
 
-                    packetOutput.writeOutput(info);
+                    packetOutput.write(info);
 
                 } catch (TimeoutException e) {
-                    // nenhum pacote neste intervalo
+                    // No packets received in this interval.
                 } catch (NotOpenException | EOFException e) {
                     System.out.println("Capture stopped.");
-                    running = false;
                 }
             }
 
         } catch (PcapNativeException e) {
             System.out.println("Error opening interface for capture. Check permissions.");
-            e.printStackTrace();
-        } catch (IOException e) {
-            System.out.println("An error occurred.");
             e.printStackTrace();
         }
     }

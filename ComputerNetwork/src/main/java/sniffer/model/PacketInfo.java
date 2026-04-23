@@ -1,4 +1,4 @@
-package sniffer;
+package sniffer.model;
 
 public class PacketInfo {
     private String timestamp;

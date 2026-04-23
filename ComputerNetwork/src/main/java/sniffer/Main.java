@@ -5,14 +5,21 @@ import org.pcap4j.core.PcapNetworkInterface;
 import java.util.List;
 import java.util.Scanner;
 
+import sniffer.capture.*;
+
 public class Main {
     public static void main(String[] args){
-        InterfaceManager interfaceManager = new InterfaceManager();
-        SnifferService sniffer = new SnifferService();
+
         Scanner sc = new Scanner(System.in);
 
+        System.out.println("=== Packet Sniffer ===");
+
+        InterfaceManager interfaceManager = new InterfaceManager();
+
+        // Choose the interface
+
         List<PcapNetworkInterface> interfaces = interfaceManager.listInterfaces();
-        PcapNetworkInterface chosenInterface = interfaceManager.chooseInterface(interfaces);
+        PcapNetworkInterface chosenInterface = interfaceManager.chooseInterface(interfaces, sc);
 
         System.out.print("Enable live mode? (y/n): ");
         boolean liveMode = sc.nextLine().trim().equalsIgnoreCase("y");
@@ -20,24 +27,25 @@ public class Main {
         System.out.print("Enable log mode? (y/n): ");
         boolean logMode = sc.nextLine().trim().equalsIgnoreCase("y");
 
-        String format = "txt";
-        String fileName = "packets.txt";
+        String logFormat = "txt";
+        String logFileName = "capture.txt";
 
         if(logMode) {
             System.out.print("Choose format (txt/csv/json): ");
-            format = sc.nextLine().trim().toLowerCase();
+            logFormat = sc.nextLine().trim().toLowerCase();
 
-            if(format.equalsIgnoreCase("csv")){
-                fileName = "packets.csv";
-            } else if(format.equalsIgnoreCase("json")){
-                fileName = "packets.json";
+            if(logFormat.equalsIgnoreCase("csv")){
+                logFileName = "capture.csv";
+            } else if(logFormat.equalsIgnoreCase("json")){
+                logFileName = "capture.json";
             } else {
-                format = "txt";
-                fileName = "packets.txt";
+                logFormat = "txt";
+                logFileName = "capture.txt";
             }
         }
 
-        sniffer.startSniffing(chosenInterface, liveMode, logMode, format, fileName);
+        SnifferService sniffer = new SnifferService();
+        sniffer.startSniffing(chosenInterface, liveMode, logMode, logFormat, logFileName);
 
     }
 }

@@ -1,4 +1,4 @@
-package sniffer;
+package sniffer.capture;
 
 import org.pcap4j.core.*;
 
@@ -11,7 +11,6 @@ public class InterfaceManager {
             List<PcapNetworkInterface> interfaces = Pcaps.findAllDevs();
 
             if (interfaces == null || interfaces.isEmpty()) {
-                System.out.println("No interfaces found");
                 return List.of();
             }
 
@@ -28,28 +27,31 @@ public class InterfaceManager {
             return interfaces;
 
         } catch (PcapNativeException e) {
+            System.out.println("Unable to list network interfaces.");
             e.printStackTrace();
             return List.of();
         }
     }
 
-    public PcapNetworkInterface chooseInterface(List<PcapNetworkInterface> interfaces){
+    public PcapNetworkInterface chooseInterface(List<PcapNetworkInterface> interfaces, Scanner sc){
 
         if(interfaces == null || interfaces.isEmpty()) {
-            System.out.print("No interfaces available.");
             return null;
         }
 
-        Scanner sc = new Scanner(System.in);
+        while(true){
+            System.out.print("Select interface index: ");
+            String input = sc.nextLine().trim();
 
-        System.out.println("What interface do you want? " );
-        int index = sc.nextInt();
-
-        if (index < 0 || index >= interfaces.size()) {
-            System.out.println("Invalid index.");
-            return null;
+            try{
+                int index = Integer.parseInt(input);
+                if (index >= 0 && index < interfaces.size()) {
+                    return interfaces.get(index);
+                }
+                System.out.println("Invalid index. Try again.");
+            } catch (NumberFormatException e){
+                System.out.println("Enter a valid numeric index.");
+            }
         }
-
-        return interfaces.get(index);
     }
 }
