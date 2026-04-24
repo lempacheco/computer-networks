@@ -16,8 +16,7 @@ public class Main {
 
         InterfaceManager interfaceManager = new InterfaceManager();
 
-        // Choose the interface
-
+        // choose interface
         List<PcapNetworkInterface> interfaces = interfaceManager.listInterfaces();
         PcapNetworkInterface chosenInterface = interfaceManager.chooseInterface(interfaces, sc);
 
@@ -44,6 +43,7 @@ public class Main {
             }
         }
 
+        // start capture 
         SnifferService sniffer = new SnifferService();
         sniffer.startSniffing(chosenInterface, liveMode, logMode, logFormat, logFileName);
 

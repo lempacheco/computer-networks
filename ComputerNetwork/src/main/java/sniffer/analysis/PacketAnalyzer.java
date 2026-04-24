@@ -33,8 +33,6 @@ public class PacketAnalyzer {
         return info;
     }
 
-
-
     private void extractEthernetInfo(Packet packet, PacketInfo info) {
         if (!packet.contains(EthernetPacket.class)) {
             return;
@@ -68,6 +66,7 @@ public class PacketAnalyzer {
     private PacketInfo analyzeIpv4(Packet packet, IpV4Packet ipV4Packet, PacketInfo info) {
         info.setSrcIp(ipV4Packet.getHeader().getSrcAddr().getHostAddress());
         info.setDstIp(ipV4Packet.getHeader().getDstAddr().getHostAddress());
+        info.setTTL(ipV4Packet.getHeader().getTtlAsInt());
 
         if (packet.contains(IcmpV4CommonPacket.class)) {
             return analyzeIcmp(packet.get(IcmpV4CommonPacket.class), info);
@@ -141,8 +140,4 @@ public class PacketAnalyzer {
         info.setSummary("UDP datagram");
         return info;
     }
-
-
-
-
 }

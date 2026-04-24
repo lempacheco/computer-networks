@@ -5,14 +5,18 @@ import sniffer.model.PacketInfo;
 public class PacketFormatter {
 
     public String formatTxt(PacketInfo info) {
-        return info.getTimestamp()
-                + " | " + safe(info.getInterfaceName())
-                + " | " + safe(info.getProtocol())
-                + " | " + addressToString(info.getSrcMac(), info.getSrcIp(), info.getSrcPort())
-                + " -> " + addressToString(info.getDstMac(), info.getDstIp(), info.getDstPort())
+        return (info.getTimestamp() == null ? "-" : info.getTimestamp())
+                + " | " + (info.getInterfaceName() == null ? "-" : info.getInterfaceName())
+                + " | " + (info.getProtocol() == null ? "-" : info.getProtocol())
+                + " | MAC " + macToString(info.getSrcMac()) + " -> " + macToString(info.getDstMac())
+                + " | IP " + ipToString(info.getSrcIp(), info.getSrcPort())
+                + " -> " + ipToString(info.getDstIp(), info.getDstPort())
+                + " | ttl=" + (info.getTTL() == null ? "-" : info.getTTL())
                 + " | len=" + info.getLength()
-                + " | " + safe(info.getSummary());
+                + " | " + (info.getSummary() == null ? "-" : info.getSummary())
+                + " | rtt=" + (info.getRTT() == null ? "-" : info.getRTT() + " ms");
     }
+
 
     public String formatCsv(PacketInfo info) {
         return csv(info.getTimestamp()) + ","
@@ -22,10 +26,12 @@ public class PacketFormatter {
                 + csv(info.getDstMac()) + ","
                 + csv(info.getSrcIp()) + ","
                 + csv(info.getDstIp()) + ","
-                + csv(valueOf(info.getSrcPort())) + ","
-                + csv(valueOf(info.getDstPort())) + ","
+                + csv(info.getSrcPort() == null ? "" : String.valueOf(info.getSrcPort())) + ","
+                + csv(info.getDstPort() == null ? "" : String.valueOf(info.getDstPort())) + ","
+                + csv(info.getTTL() == null ? "" : String.valueOf(info.getTTL())) + ","
                 + info.getLength() + ","
-                + csv(info.getSummary());
+                + csv(info.getSummary()) + ","
+                + csv(info.getRTT() == null ? "-" : info.getRTT() + " ms");
     }
 
     public String formatJson(PacketInfo info) {
@@ -39,38 +45,32 @@ public class PacketFormatter {
                 + "\"dstIp\":\"" + json(info.getDstIp()) + "\","
                 + "\"srcPort\":" + jsonNumber(info.getSrcPort()) + ","
                 + "\"dstPort\":" + jsonNumber(info.getDstPort()) + ","
+                + "\"ttl\":" + jsonNumber(info.getTTL()) + ","
                 + "\"length\":" + info.getLength() + ","
-                + "\"summary\":\"" + json(info.getSummary()) + "\""
+                + "\"summary\":\"" + json(info.getSummary()) + "\","
+                + "\"rtt\":" + jsonLong(info.getRTT())
                 + "}";
+
     }
 
-    private String addressToString(String mac, String ip, Integer port) {
-        StringBuilder sb = new StringBuilder();
-
-        if (mac != null && !mac.isBlank()) {
-            sb.append(mac);
+    private String macToString(String mac) {
+        if (mac == null || mac.isBlank()) {
+            return "-";
         }
 
-        if (ip != null && !ip.isBlank()) {
-            if (sb.length() > 0) {
-                sb.append(" /");
-            }
-            sb.append(ip);
-        }
-
-        if (port != null) {
-            sb.append(":").append(port);
-        }
-
-        return sb.length() == 0 ? "-" : sb.toString();
+        return mac;
     }
 
-    private String safe(String value) {
-        return value == null ? "-" : value;
-    }
+    private String ipToString(String ip, Integer port) {
+        if (ip == null || ip.isBlank()) {
+            return "-";
+        }
 
-    private String valueOf(Integer value) {
-        return value == null ? "" : String.valueOf(value);
+        if (port == null) {
+            return ip;
+        }
+
+        return ip + ":" + port;
     }
 
     private String csv(String value) {
@@ -86,6 +86,10 @@ public class PacketFormatter {
     }
 
     private String jsonNumber(Integer value) {
+        return value == null ? "null" : String.valueOf(value);
+    }
+
+    private String jsonLong(Long value) {
         return value == null ? "null" : String.valueOf(value);
     }
 }

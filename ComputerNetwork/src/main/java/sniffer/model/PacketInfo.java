@@ -10,8 +10,10 @@ public class PacketInfo {
     private String dstIp;
     private Integer srcPort;
     private Integer dstPort;
+    private Integer ttl;
     private int length;
     private String summary;
+    private Long rtt;
 
 
     public String getTimestamp() {
@@ -94,11 +96,27 @@ public class PacketInfo {
         this.length = length;
     }
 
+    public Integer getTTL(){
+        return ttl;
+    }
+
+    public void setTTL(int ttl){
+        this.ttl = ttl;
+    }
+
     public String getSummary() {
         return summary;
     }
 
     public void setSummary(String summary) {
         this.summary = summary;
+    }
+
+    public Long getRTT(){
+        return this.rtt;
+    }
+
+    public void setRTT(long rtt){
+        this.rtt = rtt;
     }
 }

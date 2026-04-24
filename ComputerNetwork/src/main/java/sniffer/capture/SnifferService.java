@@ -4,11 +4,8 @@ import org.pcap4j.core.*;
 import org.pcap4j.packet.Packet;
 import sniffer.output.PacketOutput;
 
-import java.io.BufferedWriter;
 import java.io.EOFException;
-import java.io.FileWriter;
 
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -16,13 +13,13 @@ import java.util.concurrent.TimeoutException;
 
 import sniffer.analysis.*;
 import sniffer.model.*;
-import sniffer.output.*;
 
 public class SnifferService {
 
     private static final int SNAP_LEN = 65536;
     private static final int READ_TIMEOUT_MILLIS = 10;
 
+    // open the interface and capture the packets
     public void startSniffing(PcapNetworkInterface nif,
                               boolean liveMode,
                               boolean logMode,
@@ -38,6 +35,7 @@ public class SnifferService {
 
         try {
             PcapNetworkInterface.PromiscuousMode mode = PcapNetworkInterface.PromiscuousMode.PROMISCUOUS;
+            // open the interface and captutre the packts
             PcapHandle handle = nif.openLive(SNAP_LEN, mode, READ_TIMEOUT_MILLIS);
 
             PacketOutput packetOutput = new PacketOutput(liveMode, logMode, logFormat, logFileName);
@@ -50,6 +48,7 @@ public class SnifferService {
                     Packet packet = handle.getNextPacketEx();
                     Timestamp ts = handle.getTimestamp();
 
+                    // the analyzer 
                     PacketInfo info = analyzer.analyze(packet);
                     info.setTimestamp(formatTimestamp(ts));
                     info.setInterfaceName(nif.getName());
@@ -57,7 +56,7 @@ public class SnifferService {
                     packetOutput.write(info);
 
                 } catch (TimeoutException e) {
-                    // No packets received in this interval.
+                    // no packets received in this interval
                 } catch (NotOpenException | EOFException e) {
                     System.out.println("Capture stopped.");
                 }
