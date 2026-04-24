@@ -4,11 +4,12 @@ import org.pcap4j.core.PcapNetworkInterface;
 
 import java.util.List;
 import java.util.Scanner;
+import sniffer.filter.PacketFilter;
 
 import sniffer.capture.*;
 
 public class Main {
-    public static void main(String[] args){
+    public static void main(String[] args) {
 
         Scanner sc = new Scanner(System.in);
 
@@ -30,13 +31,13 @@ public class Main {
         String logFormat = "txt";
         String logFileName = "capture.txt";
 
-        if(logMode) {
+        if (logMode) {
             System.out.print("Choose format (txt/csv/json): ");
             logFormat = sc.nextLine().trim().toLowerCase();
 
-            if(logFormat.equalsIgnoreCase("csv")){
+            if (logFormat.equalsIgnoreCase("csv")) {
                 logFileName = "capture.csv";
-            } else if(logFormat.equalsIgnoreCase("json")){
+            } else if (logFormat.equalsIgnoreCase("json")) {
                 logFileName = "capture.json";
             } else {
                 logFormat = "txt";
@@ -44,8 +45,29 @@ public class Main {
             }
         }
 
+        System.out.print("Filter by protocol? (ARP/IPv4/ICMP/TCP/UDP or empty): ");
+        String protocolFilter = sc.nextLine().trim();
+
+        System.out.print("Filter by IP? (empty for none): ");
+        String ipFilter = sc.nextLine().trim();
+
+        System.out.print("Filter by MAC? (empty for none): ");
+        String macFilter = sc.nextLine().trim();
+
+        System.out.print("BPF filter? (example: icmp, arp, tcp port 80; empty for none): ");
+        String bpfFilter = sc.nextLine().trim();
+
+        PacketFilter packetFilter = new PacketFilter(protocolFilter, ipFilter, macFilter);
+
         SnifferService sniffer = new SnifferService();
-        sniffer.startSniffing(chosenInterface, liveMode, logMode, logFormat, logFileName);
+        sniffer.startSniffing(
+                chosenInterface,
+                liveMode,
+                logMode,
+                logFormat,
+                logFileName,
+                packetFilter,
+                bpfFilter);
 
     }
 }

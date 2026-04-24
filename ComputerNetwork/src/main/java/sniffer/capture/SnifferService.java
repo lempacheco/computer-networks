@@ -2,6 +2,7 @@ package sniffer.capture;
 
 import org.pcap4j.core.*;
 import org.pcap4j.packet.Packet;
+
 import sniffer.output.PacketOutput;
 
 import java.io.BufferedWriter;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeoutException;
 import sniffer.analysis.*;
 import sniffer.model.*;
 import sniffer.output.*;
+import sniffer.filter.PacketFilter;
 
 public class SnifferService {
 
@@ -24,10 +26,12 @@ public class SnifferService {
     private static final int READ_TIMEOUT_MILLIS = 10;
 
     public void startSniffing(PcapNetworkInterface nif,
-                              boolean liveMode,
-                              boolean logMode,
-                              String logFormat,
-                              String logFileName) {
+            boolean liveMode,
+            boolean logMode,
+            String logFormat,
+            String logFileName,
+            PacketFilter packetFilter,
+            String bpfFilter) {
 
         if (nif == null) {
             System.out.println("No interface selected.");
@@ -39,6 +43,21 @@ public class SnifferService {
         try {
             PcapNetworkInterface.PromiscuousMode mode = PcapNetworkInterface.PromiscuousMode.PROMISCUOUS;
             PcapHandle handle = nif.openLive(SNAP_LEN, mode, READ_TIMEOUT_MILLIS);
+
+            if (bpfFilter != null && !bpfFilter.isBlank()) {
+    try {
+        handle.setFilter(
+                bpfFilter,
+                BpfProgram.BpfCompileMode.OPTIMIZE
+        );
+        System.out.println("BPF filter applied: " + bpfFilter);
+    } catch (Exception e) {
+        System.err.println("Invalid BPF filter or failed to apply filter: " + bpfFilter);
+        System.err.println("Reason: " + e.getMessage());
+        return;
+    }
+
+}
 
             PacketOutput packetOutput = new PacketOutput(liveMode, logMode, logFormat, logFileName);
 
@@ -54,7 +73,9 @@ public class SnifferService {
                     info.setTimestamp(formatTimestamp(ts));
                     info.setInterfaceName(nif.getName());
 
-                    packetOutput.write(info);
+                    if (packetFilter == null || packetFilter.matches(info)) {
+                        packetOutput.write(info);
+                    }
 
                 } catch (TimeoutException e) {
                     // No packets received in this interval.
