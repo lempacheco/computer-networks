@@ -57,7 +57,7 @@ public class RTT {
 	}
 
 	public String reverseKey(PacketInfo info, IcmpV4EchoPacket echoPacket){
-		return info.getDstPort() + ','
+		return info.getDstIp() + ','
 			   + info.getSrcIp() + ','
 			   + echoPacket.getHeader().getIdentifier() + ','
 			   + echoPacket.getHeader().getSequenceNumber();

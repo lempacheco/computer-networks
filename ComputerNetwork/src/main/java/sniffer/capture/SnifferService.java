@@ -2,6 +2,7 @@ package sniffer.capture;
 
 import org.pcap4j.core.*;
 import org.pcap4j.packet.Packet;
+
 import sniffer.output.PacketOutput;
 
 import java.io.EOFException;
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeoutException;
 
 import sniffer.analysis.*;
 import sniffer.model.*;
+import sniffer.filter.PacketFilter;
 
 public class SnifferService {
 
@@ -21,10 +23,12 @@ public class SnifferService {
 
     // open the interface and capture the packets
     public void startSniffing(PcapNetworkInterface nif,
-                              boolean liveMode,
-                              boolean logMode,
-                              String logFormat,
-                              String logFileName) {
+            boolean liveMode,
+            boolean logMode,
+            String logFormat,
+            String logFileName,
+            PacketFilter packetFilter,
+            String bpfFilter) {
 
         if (nif == null) {
             System.out.println("No interface selected.");
@@ -32,11 +36,28 @@ public class SnifferService {
         }
 
         PacketAnalyzer analyzer = new PacketAnalyzer();
+        TcpFlowAnalyzer tcpFlowAnalyzer = new TcpFlowAnalyzer();
+        RTT rttAnalyzer = new RTT();
 
         try {
             PcapNetworkInterface.PromiscuousMode mode = PcapNetworkInterface.PromiscuousMode.PROMISCUOUS;
             // open the interface and captutre the packts
             PcapHandle handle = nif.openLive(SNAP_LEN, mode, READ_TIMEOUT_MILLIS);
+
+            if (bpfFilter != null && !bpfFilter.isBlank()) {
+    try {
+        handle.setFilter(
+                bpfFilter,
+                BpfProgram.BpfCompileMode.OPTIMIZE
+        );
+        System.out.println("BPF filter applied: " + bpfFilter);
+    } catch (Exception e) {
+        System.err.println("Invalid BPF filter or failed to apply filter: " + bpfFilter);
+        System.err.println("Reason: " + e.getMessage());
+        return;
+    }
+
+}
 
             PacketOutput packetOutput = new PacketOutput(liveMode, logMode, logFormat, logFileName);
 
@@ -48,12 +69,22 @@ public class SnifferService {
                     Packet packet = handle.getNextPacketEx();
                     Timestamp ts = handle.getTimestamp();
 
-                    // the analyzer 
+                    // the analyzer
                     PacketInfo info = analyzer.analyze(packet);
                     info.setTimestamp(formatTimestamp(ts));
                     info.setInterfaceName(nif.getName());
 
-                    packetOutput.write(info);
+                    rttAnalyzer.calculateRtt(packet, info, ts);
+
+                    String tcpFlowSummary = tcpFlowAnalyzer.analyze(packet, info, ts);
+
+                    if (tcpFlowSummary != null) {
+                        info.setSummary(info.getSummary() + " | " + tcpFlowSummary);
+                    }
+
+                    if (packetFilter == null || packetFilter.matches(info)) {
+                        packetOutput.write(info);
+                    }
 
                 } catch (TimeoutException e) {
                     // no packets received in this interval
