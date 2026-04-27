@@ -8,7 +8,6 @@ import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.UdpPacket;
 import org.pcap4j.packet.namednumber.ArpOperation;
-import org.pcap4j.packet.namednumber.IcmpV4Type;
 
 import sniffer.model.*;;
 
@@ -44,20 +43,36 @@ public class PacketAnalyzer {
     }
 
     private PacketInfo analyzeArp(ArpPacket arpPacket, PacketInfo info) {
-        String srcIp = arpPacket.getHeader().getSrcProtocolAddr().getHostAddress();
-        String dstIp = arpPacket.getHeader().getDstProtocolAddr().getHostAddress();
+        String senderMac = arpPacket.getHeader().getSrcHardwareAddr().toString();
+        String targetMac = arpPacket.getHeader().getDstHardwareAddr().toString();
+
+        String senderIp = arpPacket.getHeader().getSrcProtocolAddr().getHostAddress();
+        String targetIp = arpPacket.getHeader().getDstProtocolAddr().getHostAddress();
+
         ArpOperation operation = arpPacket.getHeader().getOperation();
 
         info.setProtocol("ARP");
-        info.setSrcIp(srcIp);
-        info.setDstIp(dstIp);
+
+        // No ARP, estes campos representam o emissor e o alvo do protocolo ARP
+        info.setSrcMac(senderMac);
+        info.setDstMac(targetMac);
+        info.setSrcIp(senderIp);
+        info.setDstIp(targetIp);
 
         if (ArpOperation.REQUEST.equals(operation)) {
-            info.setSummary("ARP request");
+            info.setSummary(
+                    "ARP request: Who has " + targetIp + "? Tell " + senderIp
+            );
         } else if (ArpOperation.REPLY.equals(operation)) {
-            info.setSummary("ARP reply");
+            info.setSummary(
+                    "ARP reply: " + senderIp + " is at " + senderMac
+            );
         } else {
-            info.setSummary("ARP other");
+            info.setSummary(
+                    "ARP operation " + operation
+                            + ": sender " + senderIp + " is at " + senderMac
+                            + ", target " + targetIp + " / " + targetMac
+            );
         }
 
         return info;
@@ -86,19 +101,93 @@ public class PacketAnalyzer {
     }
 
     private PacketInfo analyzeIcmp(IcmpV4CommonPacket icmpPacket, PacketInfo info) {
-        IcmpV4Type type = icmpPacket.getHeader().getType();
         info.setProtocol("ICMP");
 
-        if (IcmpV4Type.ECHO.equals(type)) {
-            info.setSummary("ICMP echo request");
-        } else if (IcmpV4Type.ECHO_REPLY.equals(type)) {
-            info.setSummary("ICMP echo reply");
-        } else {
-            info.setSummary("ICMP other");
-        }
+        int type = icmpPacket.getHeader().getType().value() & 0xFF;
+        int code = icmpPacket.getHeader().getCode().value() & 0xFF;
+
+        String description = getIcmpDescription(type, code);
+
+        info.setSummary("ICMP type=" + type + ", code=" + code + " - " + description);
 
         return info;
     }
+
+    private String getIcmpDescription(int type, int code) {
+    switch (type) {
+        case 0:
+            if (code == 0) {
+                return "echo reply (ping)";
+            }
+            break;
+
+        case 3:
+            switch (code) {
+                case 0:
+                    return "destination network unreachable";
+                case 1:
+                    return "destination host unreachable";
+                case 2:
+                    return "destination protocol unreachable";
+                case 3:
+                    return "destination port unreachable";
+                case 6:
+                    return "destination network unknown";
+                case 7:
+                    return "destination host unknown";
+                default:
+                    return "destination unreachable";
+            }
+
+        case 8:
+            if (code == 0) {
+                return "echo request (ping)";
+            }
+            break;
+
+        case 9:
+            if (code == 0) {
+                return "route advertisement";
+            }
+            break;
+
+        case 10:
+            if (code == 0) {
+                return "router discovery";
+            }
+            break;
+
+        case 11:
+            if (code == 0) {
+                return "TTL expired / exceeded";
+            }
+            return "time exceeded";
+
+        case 12:
+            if (code == 0) {
+                return "bad IP header";
+            }
+            return "parameter problem";
+
+        case 13:
+            if (code == 0) {
+                return "timestamp";
+            }
+            break;
+
+        case 14:
+            if (code == 0) {
+                return "timestamp reply";
+            }
+            break;
+
+        default:
+            return "unknown ICMP message";
+    }
+
+        return "unknown ICMP message";
+    }
+
 
     private PacketInfo analyzeTcp(TcpPacket tcpPacket, PacketInfo info) {
         info.setProtocol("TCP");
@@ -110,27 +199,37 @@ public class PacketAnalyzer {
 
     private String buildTcpSummary(TcpPacket tcpPacket) {
         TcpPacket.TcpHeader header = tcpPacket.getHeader();
+        String flags = buildTcpFlags(header);
 
-        if (header.getSyn() && !header.getAck()) {
-            return "TCP SYN";
-        }
+        return "TCP " + flags;
+    }
+
+    private String buildTcpFlags(TcpPacket.TcpHeader header) {
         if (header.getSyn() && header.getAck()) {
-            return "TCP SYN-ACK";
-        }
-        if (header.getFin()) {
-            return "TCP FIN";
-        }
-        if (header.getRst()) {
-            return "TCP RST";
-        }
-        if (header.getPsh()) {
-            return "TCP PSH";
-        }
-        if (header.getAck()) {
-            return "TCP ACK";
+            return "SYN-ACK";
         }
 
-        return "TCP segment";
+        if (header.getSyn()) {
+            return "SYN";
+        }
+
+        if (header.getFin()) {
+            return "FIN";
+        }
+
+        if (header.getRst()) {
+            return "RST";
+        }
+
+        if (header.getPsh() && header.getAck()) {
+            return "PSH-ACK";
+        }
+
+        if (header.getAck()) {
+            return "ACK";
+        }
+
+        return "segment";
     }
 
     private PacketInfo analyzeUdp(UdpPacket udpPacket, PacketInfo info) {

@@ -2,106 +2,134 @@ package sniffer.capture;
 
 import org.pcap4j.core.*;
 import org.pcap4j.packet.Packet;
-
+import sniffer.analysis.PacketAnalyzer;
+import sniffer.analysis.RttAnalyzer;
+import sniffer.analysis.StatisticsService;
+import sniffer.filter.PacketFilter;
+import sniffer.model.PacketInfo;
 import sniffer.output.PacketOutput;
 
 import java.io.EOFException;
-
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Scanner;
 import java.util.concurrent.TimeoutException;
-
-import sniffer.analysis.*;
-import sniffer.model.*;
-import sniffer.filter.PacketFilter;
 
 public class SnifferService {
 
     private static final int SNAP_LEN = 65536;
-    private static final int READ_TIMEOUT_MILLIS = 10;
+    private static final int READ_TIMEOUT_MILLIS = 50;
 
-    // open the interface and capture the packets
-    public void startSniffing(PcapNetworkInterface nif,
+    private boolean running = true;
+
+    private final PacketAnalyzer analyzer = new PacketAnalyzer();
+    private final RttAnalyzer rttAnalyzer = new RttAnalyzer();
+    private final StatisticsService statisticsService = new StatisticsService();
+
+    public void startSniffing(
+            PcapNetworkInterface nif,
             boolean liveMode,
             boolean logMode,
             String logFormat,
             String logFileName,
             PacketFilter packetFilter,
-            String bpfFilter) {
-
-        if (nif == null) {
-            System.out.println("No interface selected.");
-            return;
-        }
-
-        PacketAnalyzer analyzer = new PacketAnalyzer();
-        TcpFlowAnalyzer tcpFlowAnalyzer = new TcpFlowAnalyzer();
-        RTT rttAnalyzer = new RTT();
+            String bpfFilter
+    ) {
+        PcapHandle handle = null;
+        PacketOutput packetOutput = null;
+        running = true;
 
         try {
-            PcapNetworkInterface.PromiscuousMode mode = PcapNetworkInterface.PromiscuousMode.PROMISCUOUS;
-            // open the interface and captutre the packts
-            PcapHandle handle = nif.openLive(SNAP_LEN, mode, READ_TIMEOUT_MILLIS);
+            PcapNetworkInterface.PromiscuousMode mode =
+                    PcapNetworkInterface.PromiscuousMode.PROMISCUOUS;
+
+            handle = nif.openLive(SNAP_LEN, mode, READ_TIMEOUT_MILLIS);
 
             if (bpfFilter != null && !bpfFilter.isBlank()) {
-    try {
-        handle.setFilter(
-                bpfFilter,
-                BpfProgram.BpfCompileMode.OPTIMIZE
-        );
-        System.out.println("BPF filter applied: " + bpfFilter);
-    } catch (Exception e) {
-        System.err.println("Invalid BPF filter or failed to apply filter: " + bpfFilter);
-        System.err.println("Reason: " + e.getMessage());
-        return;
-    }
+                try {
+                    handle.setFilter(bpfFilter, BpfProgram.BpfCompileMode.OPTIMIZE);
+                    System.out.println("BPF filter applied: " + bpfFilter);
+                } catch (Exception e) {
+                    System.err.println("Invalid BPF filter: " + bpfFilter);
+                    System.err.println("Reason: " + e.getMessage());
+                    return;
+                }
+            }
 
-}
+            packetOutput = new PacketOutput(liveMode, logMode, logFormat, logFileName);
 
-            PacketOutput packetOutput = new PacketOutput(liveMode, logMode, logFormat, logFileName);
+            startStopListener();
 
-            System.out.println("Sniffing on: " + nif.getName());
-            System.out.println("Press Ctrl+C to stop.");
+            System.out.println("Sniffing on interface: " + nif.getName());
+            System.out.println("Type 's' and press ENTER to stop sniffing...\n");
 
-            while (true) {
+            while (running) {
                 try {
                     Packet packet = handle.getNextPacketEx();
                     Timestamp ts = handle.getTimestamp();
 
-                    // the analyzer
                     PacketInfo info = analyzer.analyze(packet);
                     info.setTimestamp(formatTimestamp(ts));
                     info.setInterfaceName(nif.getName());
 
                     rttAnalyzer.calculateRtt(packet, info, ts);
 
-                    String tcpFlowSummary = tcpFlowAnalyzer.analyze(packet, info, ts);
-
-                    if (tcpFlowSummary != null) {
-                        info.setSummary(info.getSummary() + " | " + tcpFlowSummary);
-                    }
-
                     if (packetFilter == null || packetFilter.matches(info)) {
                         packetOutput.write(info);
+                        statisticsService.register(info);
                     }
 
                 } catch (TimeoutException e) {
-                    // no packets received in this interval
+                    // Sem pacotes neste intervalo. Continua para verificar running.
                 } catch (NotOpenException | EOFException e) {
                     System.out.println("Capture stopped.");
+                    running = false;
                 }
             }
 
         } catch (PcapNativeException e) {
-            System.out.println("Error opening interface for capture. Check permissions.");
+            System.err.println("Error opening interface. Check permissions/root/admin.");
             e.printStackTrace();
+
+        } finally {
+            if (packetOutput != null) {
+                packetOutput.close();
+            }
+
+            if (handle != null && handle.isOpen()) {
+                handle.close();
+            }
+
+            statisticsService.printSummary();
+            System.out.println("Resources closed.");
         }
     }
 
+    private void startStopListener() {
+        Thread inputThread = new Thread(() -> {
+            Scanner scanner = new Scanner(System.in);
+
+            while (running) {
+                String input = scanner.nextLine();
+
+                if ("s".equalsIgnoreCase(input.trim())) {
+                    System.out.println("Stopping sniffing...");
+                    running = false;
+                    break;
+                }
+            }
+        });
+
+        inputThread.setDaemon(true);
+        inputThread.start();
+    }
+
     private String formatTimestamp(Timestamp ts) {
-        LocalDateTime dateTime = ts.toLocalDateTime();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
-        return dateTime.format(formatter);
+        if (ts == null) {
+            return "";
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        return sdf.format(ts);
     }
 }

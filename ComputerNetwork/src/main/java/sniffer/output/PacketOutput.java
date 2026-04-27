@@ -77,7 +77,7 @@ public class PacketOutput {
         }
 
         if ("csv".equals(logFormat)) {
-            writer.write("timestamp,interface,protocol,srcMac,dstMac,srcIp,dstIp,srcPort,dstPort,length,summary");
+            writer.write("timestamp,interface,protocol,srcMac,dstMac,srcIp,dstIp,srcPort,dstPort,ttl,length,summary,rtt");
             writer.newLine();
             writer.flush();
         }

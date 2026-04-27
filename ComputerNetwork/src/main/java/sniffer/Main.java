@@ -37,14 +37,13 @@ public class Main {
             if (logFormat.equalsIgnoreCase("csv")) {
                 logFileName = "capture.csv";
             } else if (logFormat.equalsIgnoreCase("json")) {
-                logFileName = "capture.json";
+                logFileName = "capture.jsonl";
             } else {
                 logFormat = "txt";
                 logFileName = "capture.txt";
             }
         }
 
-        // start capture
         System.out.print("Filter by protocol? (ARP/IPv4/ICMP/TCP/UDP or empty): ");
         String protocolFilter = sc.nextLine().trim();
 
@@ -59,6 +58,7 @@ public class Main {
 
         PacketFilter packetFilter = new PacketFilter(protocolFilter, ipFilter, macFilter);
 
+        // start capture
         SnifferService sniffer = new SnifferService();
         sniffer.startSniffing(
                 chosenInterface,

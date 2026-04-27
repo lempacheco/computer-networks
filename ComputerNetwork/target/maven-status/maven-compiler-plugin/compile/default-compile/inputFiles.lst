@@ -5,6 +5,6 @@
 /home/let-cia-pacheco/Documents/projetosLEI/RC_TP2/Computer-Networks/ComputerNetwork/src/main/java/sniffer/capture/InterfaceManager.java
 /home/let-cia-pacheco/Documents/projetosLEI/RC_TP2/Computer-Networks/ComputerNetwork/src/main/java/sniffer/output/PacketOutput.java
 /home/let-cia-pacheco/Documents/projetosLEI/RC_TP2/Computer-Networks/ComputerNetwork/src/main/java/sniffer/output/PacketFormatter.java
-/home/let-cia-pacheco/Documents/projetosLEI/RC_TP2/Computer-Networks/ComputerNetwork/src/main/java/sniffer/analysis/RTT.java
-/home/let-cia-pacheco/Documents/projetosLEI/RC_TP2/Computer-Networks/ComputerNetwork/src/main/java/sniffer/analysis/TcpFlowAnalyzer.java
 /home/let-cia-pacheco/Documents/projetosLEI/RC_TP2/Computer-Networks/ComputerNetwork/src/main/java/sniffer/Main.java
+/home/let-cia-pacheco/Documents/projetosLEI/RC_TP2/Computer-Networks/ComputerNetwork/src/main/java/sniffer/analysis/RttAnalyzer.java
+/home/let-cia-pacheco/Documents/projetosLEI/RC_TP2/Computer-Networks/ComputerNetwork/src/main/java/sniffer/analysis/StatisticsService.java
