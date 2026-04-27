@@ -112,11 +112,11 @@ public class PacketInfo {
         this.summary = summary;
     }
 
-    public Long getRTT(){
+    public Long getRtt(){
         return this.rtt;
     }
 
-    public void setRTT(long rtt){
+    public void setRtt(long rtt){
         this.rtt = rtt;
     }
 }

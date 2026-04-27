@@ -14,7 +14,7 @@ public class PacketFormatter {
                 + " | ttl=" + (info.getTTL() == null ? "-" : info.getTTL())
                 + " | len=" + info.getLength()
                 + " | " + (info.getSummary() == null ? "-" : info.getSummary())
-                + " | rtt=" + (info.getRTT() == null ? "-" : info.getRTT() + " ms");
+                + " | rtt=" + (info.getRtt() == null ? "-" : info.getRtt() + " ms");
     }
 
 
@@ -31,7 +31,7 @@ public class PacketFormatter {
                 + csv(info.getTTL() == null ? "" : String.valueOf(info.getTTL())) + ","
                 + info.getLength() + ","
                 + csv(info.getSummary()) + ","
-                + csv(info.getRTT() == null ? "-" : info.getRTT() + " ms");
+                + csv(info.getRtt() == null ? "-" : info.getRtt() + " ms");
     }
 
     public String formatJson(PacketInfo info) {
@@ -48,7 +48,7 @@ public class PacketFormatter {
                 + "\"ttl\":" + jsonNumber(info.getTTL()) + ","
                 + "\"length\":" + info.getLength() + ","
                 + "\"summary\":\"" + json(info.getSummary()) + "\","
-                + "\"rtt\":" + jsonLong(info.getRTT())
+                + "\"rtt\":" + jsonLong(info.getRtt())
                 + "}";
 
     }

@@ -59,7 +59,7 @@ public class StatisticsService {
             registerArp(info);
         }
 
-        if ("ICMP".equalsIgnoreCase(protocol) && info.getRTT() != null) {
+        if ("ICMP".equalsIgnoreCase(protocol) && info.getRtt() != null) {
             registerIcmpRtt(info);
         }
     }
@@ -178,7 +178,7 @@ public class StatisticsService {
             rttByHostPair.put(hostPair, stats);
         }
 
-        stats.register(info.getRTT());
+        stats.register(info.getRtt());
     }
 
     private void printIcmpRttStats() {
