@@ -77,7 +77,7 @@ public class RttAnalyzer {
             identifier = replyPacket.getHeader().getIdentifier() & 0xFFFF;
             sequenceNumber = replyPacket.getHeader().getSequenceNumber() & 0xFFFF;
         } else {
-            return; 
+            return;
         }
         /*
          * Caso seja um Echo Request, guardamos o timestamp.

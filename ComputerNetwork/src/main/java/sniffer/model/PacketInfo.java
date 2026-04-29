@@ -80,5 +80,5 @@ public class PacketInfo {
     public String getTcpFlags() { return tcpFlags; }
     public void setTcpFlags(String tcpFlags) { this.tcpFlags = tcpFlags; }
 
-    
+
 }
