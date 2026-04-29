@@ -15,108 +15,70 @@ public class PacketInfo {
     private String summary;
     private Long rtt;
 
+    // Campos extra úteis para a análise pedida no trabalho
+    private String arpOperation;
+    private Integer icmpType;
+    private Integer icmpCode;
+    private Integer icmpIdentifier;
+    private Integer icmpSequenceNumber;
+    private String tcpFlags;
 
-    public String getTimestamp() {
-        return timestamp;
-    }
+    public String getTimestamp() { return timestamp; }
+    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
 
-    public void setTimestamp(String timestamp) {
-        this.timestamp = timestamp;
-    }
+    public String getInterfaceName() { return interfaceName; }
+    public void setInterfaceName(String interfaceName) { this.interfaceName = interfaceName; }
 
-    public String getInterfaceName() {
-        return interfaceName;
-    }
+    public String getProtocol() { return protocol; }
+    public void setProtocol(String protocol) { this.protocol = protocol; }
 
-    public void setInterfaceName(String interfaceName) {
-        this.interfaceName = interfaceName;
-    }
+    public String getSrcMac() { return srcMac; }
+    public void setSrcMac(String srcMac) { this.srcMac = srcMac; }
 
-    public String getProtocol() {
-        return protocol;
-    }
+    public String getDstMac() { return dstMac; }
+    public void setDstMac(String dstMac) { this.dstMac = dstMac; }
 
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
+    public String getSrcIp() { return srcIp; }
+    public void setSrcIp(String srcIp) { this.srcIp = srcIp; }
 
-    public String getSrcMac() {
-        return srcMac;
-    }
+    public String getDstIp() { return dstIp; }
+    public void setDstIp(String dstIp) { this.dstIp = dstIp; }
 
-    public void setSrcMac(String srcMac) {
-        this.srcMac = srcMac;
-    }
+    public Integer getSrcPort() { return srcPort; }
+    public void setSrcPort(Integer srcPort) { this.srcPort = srcPort; }
 
-    public String getDstMac() {
-        return dstMac;
-    }
+    public Integer getDstPort() { return dstPort; }
+    public void setDstPort(Integer dstPort) { this.dstPort = dstPort; }
 
-    public void setDstMac(String dstMac) {
-        this.dstMac = dstMac;
-    }
+    public Integer getTTL() { return ttl; }
+    public void setTTL(Integer ttl) { this.ttl = ttl; }
 
-    public String getSrcIp() {
-        return srcIp;
-    }
+    public int getLength() { return length; }
+    public void setLength(int length) { this.length = length; }
 
-    public void setSrcIp(String srcIp) {
-        this.srcIp = srcIp;
-    }
+    public String getSummary() { return summary; }
+    public void setSummary(String summary) { this.summary = summary; }
 
-    public String getDstIp() {
-        return dstIp;
-    }
+    public Long getRtt() { return rtt; }
+    public void setRtt(Long rtt) { this.rtt = rtt; }
 
-    public void setDstIp(String dstIp) {
-        this.dstIp = dstIp;
-    }
+    public String getArpOperation() { return arpOperation; }
+    public void setArpOperation(String arpOperation) { this.arpOperation = arpOperation; }
 
-    public Integer getSrcPort() {
-        return srcPort;
-    }
+    public Integer getIcmpType() { return icmpType; }
+    public void setIcmpType(Integer icmpType) { this.icmpType = icmpType; }
 
-    public void setSrcPort(Integer srcPort) {
-        this.srcPort = srcPort;
-    }
+    public Integer getIcmpCode() { return icmpCode; }
+    public void setIcmpCode(Integer icmpCode) { this.icmpCode = icmpCode; }
 
-    public Integer getDstPort() {
-        return dstPort;
-    }
+    public Integer getIcmpIdentifier() { return icmpIdentifier; }
+    public void setIcmpIdentifier(Integer icmpIdentifier) { this.icmpIdentifier = icmpIdentifier; }
 
-    public void setDstPort(Integer dstPort) {
-        this.dstPort = dstPort;
-    }
+    public Integer getIcmpSequenceNumber() { return icmpSequenceNumber; }
+    public void setIcmpSequenceNumber(Integer icmpSequenceNumber) { this.icmpSequenceNumber = icmpSequenceNumber; }
 
-    public int getLength() {
-        return length;
-    }
+    public String getTcpFlags() { return tcpFlags; }
+    public void setTcpFlags(String tcpFlags) { this.tcpFlags = tcpFlags; }
 
-    public void setLength(int length) {
-        this.length = length;
-    }
-
-    public Integer getTTL(){
-        return ttl;
-    }
-
-    public void setTTL(int ttl){
-        this.ttl = ttl;
-    }
-
-    public String getSummary() {
-        return summary;
-    }
-
-    public void setSummary(String summary) {
-        this.summary = summary;
-    }
-
-    public Long getRtt(){
-        return this.rtt;
-    }
-
-    public void setRtt(long rtt){
-        this.rtt = rtt;
-    }
+    
 }

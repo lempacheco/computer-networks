@@ -2,6 +2,7 @@ package sniffer.analysis;
 
 import org.pcap4j.packet.IcmpV4CommonPacket;
 import org.pcap4j.packet.IcmpV4EchoPacket;
+import org.pcap4j.packet.IcmpV4EchoReplyPacket;
 import org.pcap4j.packet.Packet;
 import sniffer.model.PacketInfo;
 
@@ -40,16 +41,7 @@ public class RttAnalyzer {
             return;
         }
 
-        /*
-         * O cálculo de RTT é feito apenas para mensagens Echo,
-         * ou seja, Echo Request e Echo Reply, usadas pelo comando ping.
-         */
-        if (!packet.contains(IcmpV4EchoPacket.class)) {
-            return;
-        }
-
         IcmpV4CommonPacket icmpPacket = packet.get(IcmpV4CommonPacket.class);
-        IcmpV4EchoPacket echoPacket = packet.get(IcmpV4EchoPacket.class);
 
         /*
          * Campo type do ICMP:
@@ -65,13 +57,28 @@ public class RttAnalyzer {
             return;
         }
 
+        if(type!= 8 && type != 0){
+            return;
+        }
+
         /*
          * O identifier e o sequence number permitem distinguir vários pings
          * em simultâneo entre os mesmos hosts.
          */
-        int identifier = echoPacket.getHeader().getIdentifier() & 0xFFFF;
-        int sequenceNumber = echoPacket.getHeader().getSequenceNumber() & 0xFFFF;
+        int identifier = -1;
+        int sequenceNumber = -1;
 
+        if(packet.contains(IcmpV4EchoPacket.class)) {
+            IcmpV4EchoPacket echoPacket = packet.get(IcmpV4EchoPacket.class);
+            identifier = echoPacket.getHeader().getIdentifier() & 0xFFFF;
+            sequenceNumber = echoPacket.getHeader().getSequenceNumber() & 0xFFFF;
+        } else if (icmpPacket.getPayload() instanceof IcmpV4EchoReplyPacket){
+            IcmpV4EchoReplyPacket replyPacket = (IcmpV4EchoReplyPacket) icmpPacket.getPayload();
+            identifier = replyPacket.getHeader().getIdentifier() & 0xFFFF;
+            sequenceNumber = replyPacket.getHeader().getSequenceNumber() & 0xFFFF;
+        } else {
+            return; 
+        }
         /*
          * Caso seja um Echo Request, guardamos o timestamp.
          *
