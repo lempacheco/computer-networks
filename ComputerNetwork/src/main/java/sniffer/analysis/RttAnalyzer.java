@@ -108,7 +108,7 @@ public class RttAnalyzer {
             if (requestTimestamp != null) {
                 long rtt = timestamp.getTime() - requestTimestamp.getTime();
 
-                info.setRtt(rtt);
+                info.setRTT(rtt);
 
                 /*
                  * Adiciona o RTT também ao resumo textual do pacote,

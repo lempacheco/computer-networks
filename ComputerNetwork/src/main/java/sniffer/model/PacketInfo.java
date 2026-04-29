@@ -116,7 +116,7 @@ public class PacketInfo {
         return this.rtt;
     }
 
-    public void setRtt(long rtt){
+    public void setRTT(long rtt){
         this.rtt = rtt;
     }
 }
