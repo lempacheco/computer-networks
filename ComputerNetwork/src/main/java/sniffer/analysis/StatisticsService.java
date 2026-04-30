@@ -130,11 +130,9 @@ public class StatisticsService {
     }
 
     private void registerArp(PacketInfo info) {
-        String summary = info.getSummary() == null ? "" : info.getSummary().toLowerCase();
-
-        if (summary.contains("arp request")) {
+        if ("REQUEST".equalsIgnoreCase(info.getArpOperation())) {
             arpRequests++;
-        } else if (summary.contains("arp reply")) {
+        } else if ("REPLY".equalsIgnoreCase(info.getArpOperation())) {
             arpReplies++;
         }
 

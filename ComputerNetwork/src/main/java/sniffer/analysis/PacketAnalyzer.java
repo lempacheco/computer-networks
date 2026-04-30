@@ -9,7 +9,7 @@ import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.UdpPacket;
 import org.pcap4j.packet.namednumber.ArpOperation;
 
-import sniffer.model.*;;
+import sniffer.model.*;
 
 public class PacketAnalyzer {
 
@@ -110,8 +110,6 @@ public class PacketAnalyzer {
 
         String description = getIcmpDescription(type, code);
         StringBuilder summary = new StringBuilder("ICMP type=").append(type).append(", code=").append(code).append(" - ").append(description);
-
-        info.setSummary("ICMP type=" + type + ", code=" + code + " - " + description);
 
         info.setSummary(summary.toString());
         return info;

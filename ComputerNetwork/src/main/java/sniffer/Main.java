@@ -38,15 +38,15 @@ public class Main {
             }
 
             System.out.println();
-            System.out.println("Filtros da aplicação, aplicados depois da captura:");
-            String protocolFilter = askOptionAllowEmpty(sc, "Protocolo (ARP/IPv4/ICMP/TCP/UDP ou vazio)",
+            System.out.println("Application filters:");
+            String protocolFilter = askOptionAllowEmpty(sc, "Protocol (ARP/IPv4/ICMP/TCP/UDP or empty)",
                 new String[]{"ARP", "IPv4", "ICMP", "TCP", "UDP"});
-            String ipFilter = askText(sc, "IP origem/destino (vazio = sem filtro)", "");
-            String macFilter = askText(sc, "MAC origem/destino (vazio = sem filtro)", "");
+            String ipFilter = askText(sc, "Source/destination IP (empty = no filter)", "");
+            String macFilter = askText(sc, "Source/destination MAC (empty = no filter)", "");
 
             System.out.println();
-            System.out.println("Filtro BPF opcional, aplicado pelo pcap4j antes do parsing.");
-            System.out.println("Exemplos: arp | icmp | tcp port 80 | host 10.0.0.2");
+            System.out.println("BPF filter");
+            System.out.println("Examples: arp | icmp | tcp port 80 | host 10.0.0.2");
             String bpfFilter = askText(sc, "BPF", "");
 
             PacketFilter packetFilter = new PacketFilter(protocolFilter, ipFilter, macFilter);
@@ -61,8 +61,8 @@ public class Main {
 
     private static void printBanner() {
         System.out.println("========================================");
-        System.out.println(" Packet Sniffer - Redes de Computadores ");
-        System.out.println(" Protocolos: ARP, IPv4, ICMP, TCP, UDP  ");
+        System.out.println(" Packet Sniffer - Computer Networks     ");
+        System.out.println(" Protocols: ARP, IPv4, ICMP, TCP, UDP   ");
         System.out.println("========================================");
         System.out.println();
     }
@@ -75,7 +75,7 @@ public class Main {
             if (input.isEmpty()) return defaultValue;
             if (input.equalsIgnoreCase("y") || input.equalsIgnoreCase("yes")) return true;
             if (input.equalsIgnoreCase("n") || input.equalsIgnoreCase("no")) return false;
-            System.out.println("Invalid input. Write y/yes ou n/no.");
+            System.out.println("Invalid input. Write y/yes or n/no.");
         }
     }
 
@@ -87,7 +87,7 @@ public class Main {
             for (String option : options) {
                 if (option.equalsIgnoreCase(input)) return option.toLowerCase();
             }
-            System.out.println("Ivalid Option.");
+            System.out.println("Invalid option.");
         }
     }
 
@@ -99,7 +99,7 @@ public class Main {
             for (String option : options) {
                 if (option.equalsIgnoreCase(input)) return option;
             }
-            System.out.println("Protocolo inválido. Valores aceites: " + String.join(", ", options) + ".");
+            System.out.println("Invalid protocol. Accepted values: " + String.join(", ", options) + ".");
         }
     }
 
@@ -109,7 +109,6 @@ public class Main {
         String input = sc.nextLine().trim();
         return input.isEmpty() ? defaultValue : input;
     }
-
 
 
     private static void printConfiguration(PcapNetworkInterface nif,
@@ -122,20 +121,20 @@ public class Main {
                                            String macFilter,
                                            String bpfFilter) {
         System.out.println();
-        System.out.println("========== Configuração ==========");
+        System.out.println("========== Configuration ==========");
         System.out.println("Interface: " + nif.getName() + " - " + nif.getDescription());
-        System.out.println("Live: " + (liveMode ? "sim" : "não"));
-        System.out.println("Log: " + (logMode ? logFormat + " -> " + logFileName : "não"));
-        System.out.println("Filtro protocolo: " + emptyAsNone(protocolFilter));
-        System.out.println("Filtro IP: " + emptyAsNone(ipFilter));
-        System.out.println("Filtro MAC: " + emptyAsNone(macFilter));
-        System.out.println("Filtro BPF: " + emptyAsNone(bpfFilter));
-        System.out.println("==================================");
+        System.out.println("Live: " + (liveMode ? "yes" : "no"));
+        System.out.println("Log: " + (logMode ? logFormat + " -> " + logFileName : "no"));
+        System.out.println("Protocol filter: " + emptyAsNone(protocolFilter));
+        System.out.println("IP filter: " + emptyAsNone(ipFilter));
+        System.out.println("MAC filter: " + emptyAsNone(macFilter));
+        System.out.println("BPF filter: " + emptyAsNone(bpfFilter));
+        System.out.println("===================================");
         System.out.println();
     }
 
     private static String emptyAsNone(String value) {
-        return value == null || value.isBlank() ? "nenhum" : value;
+        return value == null || value.isBlank() ? "none" : value;
     }
 
 }

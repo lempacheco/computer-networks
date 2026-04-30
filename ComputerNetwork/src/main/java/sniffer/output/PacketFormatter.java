@@ -2,10 +2,13 @@ package sniffer.output;
 
 import sniffer.model.PacketInfo;
 
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+
 public class PacketFormatter {
 
     public String formatTxt(PacketInfo info) {
-        return (info.getTimestamp() == null ? "-" : info.getTimestamp())
+        return formatTimestamp(info.getCaptureTimestamp())
                 + " | " + (info.getInterfaceName() == null ? "-" : info.getInterfaceName())
                 + " | " + (info.getProtocol() == null ? "-" : info.getProtocol())
                 + " | MAC " + macToString(info.getSrcMac()) + " -> " + macToString(info.getDstMac())
@@ -19,7 +22,7 @@ public class PacketFormatter {
 
 
     public String formatCsv(PacketInfo info) {
-        return csv(info.getTimestamp()) + ","
+        return csv(formatTimestamp(info.getCaptureTimestamp())) + ","
                 + csv(info.getInterfaceName()) + ","
                 + csv(info.getProtocol()) + ","
                 + csv(info.getSrcMac()) + ","
@@ -36,7 +39,7 @@ public class PacketFormatter {
 
     public String formatJson(PacketInfo info) {
         return "{"
-                + "\"timestamp\":\"" + json(info.getTimestamp()) + "\","
+                + "\"timestamp\":\"" + json(formatTimestamp(info.getCaptureTimestamp())) + "\","
                 + "\"interface\":\"" + json(info.getInterfaceName()) + "\","
                 + "\"protocol\":\"" + json(info.getProtocol()) + "\","
                 + "\"srcMac\":\"" + json(info.getSrcMac()) + "\","
@@ -91,5 +94,10 @@ public class PacketFormatter {
 
     private String jsonLong(Long value) {
         return value == null ? "null" : String.valueOf(value);
+    }
+
+    public String formatTimestamp(Timestamp ts) {
+        if (ts == null) return "-";
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(ts);
     }
 }

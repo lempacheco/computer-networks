@@ -1,7 +1,9 @@
 package sniffer.model;
 
+import java.sql.Timestamp;
+
 public class PacketInfo {
-    private String timestamp;
+    private Timestamp captureTimestamp;
     private String interfaceName;
     private String protocol;
     private String srcMac;
@@ -15,16 +17,20 @@ public class PacketInfo {
     private String summary;
     private Long rtt;
 
-    // Campos extra úteis para a análise pedida no trabalho
+    // arp
     private String arpOperation;
+
+    // icmp
     private Integer icmpType;
     private Integer icmpCode;
     private Integer icmpIdentifier;
     private Integer icmpSequenceNumber;
+
+    // tcp
     private String tcpFlags;
 
-    public String getTimestamp() { return timestamp; }
-    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+    public Timestamp getCaptureTimestamp() { return captureTimestamp; }
+    public void setCaptureTimestamp(Timestamp captureTimestamp) { this.captureTimestamp = captureTimestamp; }
 
     public String getInterfaceName() { return interfaceName; }
     public void setInterfaceName(String interfaceName) { this.interfaceName = interfaceName; }
@@ -79,6 +85,4 @@ public class PacketInfo {
 
     public String getTcpFlags() { return tcpFlags; }
     public void setTcpFlags(String tcpFlags) { this.tcpFlags = tcpFlags; }
-
-
 }

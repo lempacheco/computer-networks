@@ -26,13 +26,11 @@ public class PacketOutput {
                 this.writer = new BufferedWriter(new FileWriter(logFileName, true));
                 writeHeader();
             } catch (IOException e) {
-                throw new UncheckedIOException("Erro ao abrir ficheiro de log: " + logFileName, e);
+                throw new UncheckedIOException("Error opening log file: " + logFileName, e);
             }
         } else {
             this.writer = null;
         }
-
-
     }
 
     public void write(PacketInfo info){
@@ -48,7 +46,7 @@ public class PacketOutput {
                 writer.newLine();
                 writer.flush();
             } catch (IOException e) {
-            throw new UncheckedIOException("Erro ao escrever no ficheiro de log.", e);
+            throw new UncheckedIOException("Error writing to log file.", e);
             }
         }
     }
@@ -83,7 +81,6 @@ public class PacketOutput {
         }
     }
 
-
     public void close(){
         if(writer != null){
             try {
@@ -109,4 +106,27 @@ public class PacketOutput {
     }
 
 
+    public void outputIcmpMatch(PacketInfo request, PacketInfo reply) {
+        if (request == null || reply == null) {
+            return;
+        }
+
+        if (livMode) {
+            System.out.println();
+            System.out.println("+---------------------- ICMP RTT MATCH ----------------------+");
+            System.out.println("| REQUEST | " + request.getSrcIp() + " -> " + request.getDstIp());
+            System.out.println("|         | time=" + formatter.formatTimestamp(request.getCaptureTimestamp())
+                    + " | id=" + request.getIcmpIdentifier()
+                    + " | seq=" + request.getIcmpSequenceNumber());
+            System.out.println("| REPLY   | " + reply.getSrcIp() + " -> " + reply.getDstIp());
+            System.out.println("|         | time=" + formatter.formatTimestamp(reply.getCaptureTimestamp())
+                    + " | id=" + reply.getIcmpIdentifier()
+                    + " | seq=" + reply.getIcmpSequenceNumber());
+            System.out.println("| RTT     | " + reply.getRtt() + " ms");
+            System.out.println("+------------------------------------------------------------+");
+            System.out.println();
+        }
+
+        write(reply);
+    }
 }

@@ -12,59 +12,32 @@ import java.util.Map;
 
 public class RttAnalyzer {
 
-    /*
-     * Este HashMap guarda temporariamente os ICMP Echo Request capturados.
-     *
-     * A chave identifica unicamente um pedido ICMP:
-     * srcIp -> dstIp : identifier : sequenceNumber
-     *
-     * O valor guardado é o timestamp do momento em que o Echo Request foi capturado.
-     */
-    private final Map<String, Timestamp> requests = new HashMap<>();
+    private final Map<String, PacketInfo> pendingRequests = new HashMap<>();
 
-    /*
-     * Este método é chamado para cada pacote capturado.
-     *
-     * Se o pacote for ICMP Echo Request, o timestamp é guardado.
-     * Se o pacote for ICMP Echo Reply, procura-se o pedido correspondente
-     * e calcula-se o RTT.
-     */
-    public void calculateRtt(Packet packet, PacketInfo info, Timestamp timestamp) {
+    public PacketInfo calculateRtt(Packet packet, PacketInfo info, Timestamp timestamp) {
 
-        // Validação básica para evitar NullPointerException
         if (packet == null || info == null || timestamp == null) {
-            return;
+            return null;
         }
-
-        // O RTT só faz sentido para pacotes ICMP
         if (!packet.contains(IcmpV4CommonPacket.class)) {
-            return;
+            return null;
         }
 
         IcmpV4CommonPacket icmpPacket = packet.get(IcmpV4CommonPacket.class);
 
-        /*
-         * Campo type do ICMP:
-         * type = 8 -> Echo Request
-         * type = 0 -> Echo Reply
-         */
         int type = icmpPacket.getHeader().getType().value() & 0xFF;
 
         String srcIp = info.getSrcIp();
         String dstIp = info.getDstIp();
 
         if (srcIp == null || dstIp == null) {
-            return;
+            return null;
         }
 
         if(type!= 8 && type != 0){
-            return;
+            return null;
         }
 
-        /*
-         * O identifier e o sequence number permitem distinguir vários pings
-         * em simultâneo entre os mesmos hosts.
-         */
         int identifier = -1;
         int sequenceNumber = -1;
 
@@ -77,64 +50,34 @@ public class RttAnalyzer {
             identifier = replyPacket.getHeader().getIdentifier() & 0xFFFF;
             sequenceNumber = replyPacket.getHeader().getSequenceNumber() & 0xFFFF;
         } else {
-            return;
-        }
-        /*
-         * Caso seja um Echo Request, guardamos o timestamp.
-         *
-         * Exemplo:
-         * 10.0.0.1 -> 10.0.0.2 : id : seq
-         */
-        if (type == 8) {
-            String key = buildKey(srcIp, dstIp, identifier, sequenceNumber);
-            requests.put(key, timestamp);
-            return;
+            return null;
         }
 
-        /*
-         * Caso seja um Echo Reply, a resposta vem no sentido inverso.
-         *
-         * Se o pedido foi:
-         * 10.0.0.1 -> 10.0.0.2
-         *
-         * A resposta será:
-         * 10.0.0.2 -> 10.0.0.1
-         *
-         * Por isso, a chave é construída invertendo origem e destino.
-         */
+        info.setIcmpIdentifier(identifier);
+        info.setIcmpSequenceNumber(sequenceNumber);
+
+        if (type == 8) {
+            String key = buildKey(srcIp, dstIp, identifier, sequenceNumber);
+            info.setCaptureTimestamp(timestamp);
+            pendingRequests.put(key, info);
+            return null;
+        }
+
         if (type == 0) {
             String reverseKey = buildKey(dstIp, srcIp, identifier, sequenceNumber);
 
-            Timestamp requestTimestamp = requests.remove(reverseKey);
+            PacketInfo requestInfo = pendingRequests.remove(reverseKey);
 
-            /*
-             * Se encontrou o pedido correspondente, calcula o RTT:
-             *
-             * RTT = tempo da resposta - tempo do pedido
-             */
-            if (requestTimestamp != null) {
-                long rtt = timestamp.getTime() - requestTimestamp.getTime();
-
+            if (requestInfo != null) {
+                long rtt = timestamp.getTime() - requestInfo.getCaptureTimestamp().getTime();
                 info.setRtt(rtt);
-
-                /*
-                 * Adiciona o RTT também ao resumo textual do pacote,
-                 * para aparecer diretamente no output live/log.
-                 */
-                info.setSummary(info.getSummary() + " | RTT=" + rtt + " ms");
+                return requestInfo;
             }
         }
+
+        return null;
     }
 
-    /*
-     * Cria a chave usada no HashMap.
-     *
-     * Inclui:
-     * - IP origem
-     * - IP destino
-     * - identifier
-     * - sequence number
-     */
     private String buildKey(String srcIp, String dstIp, int identifier, int sequenceNumber) {
         return srcIp + "->" + dstIp + ":" + identifier + ":" + sequenceNumber;
     }
