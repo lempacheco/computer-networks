@@ -24,6 +24,7 @@ public class SnifferService {
     private static final int READ_TIMEOUT_MILLIS = 50;
 
     private volatile boolean running = true;
+    private volatile PcapHandle handle;
 
     private final PacketAnalyzer analyzer = new PacketAnalyzer();
     private final RttAnalyzer rttAnalyzer = new RttAnalyzer();
@@ -41,7 +42,7 @@ public class SnifferService {
             return;
         }
 
-        PcapHandle handle = null;
+        handle = null;
         PacketOutput packetOutput = null;
         running = true;
 
@@ -109,6 +110,8 @@ public class SnifferService {
                     if ("s".equalsIgnoreCase(input.trim())) {
                         System.out.println("Stopping capture...");
                         running = false;
+                        PcapHandle h = handle;
+                        if (h != null && h.isOpen()) h.breakLoop();
                     }
                 } catch (Exception e) {
                     running = false;
