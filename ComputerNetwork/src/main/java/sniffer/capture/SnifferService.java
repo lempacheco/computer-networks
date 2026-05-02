@@ -50,6 +50,7 @@ public class SnifferService {
             handle = nif.openLive(SNAP_LEN, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, READ_TIMEOUT_MILLIS);
 
             applyBpfFilter(handle, bpfFilter);
+            
             packetOutput = new PacketOutput(liveMode, logMode, logFormat, logFileName);
 
             startStopListener();

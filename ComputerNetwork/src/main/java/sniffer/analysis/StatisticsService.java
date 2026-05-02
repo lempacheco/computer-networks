@@ -3,6 +3,7 @@ package sniffer.analysis;
 import sniffer.model.PacketInfo;
 
 import java.util.HashMap;
+import java.util.LongSummaryStatistics;
 import java.util.Map;
 
 public class StatisticsService {
@@ -20,13 +21,12 @@ public class StatisticsService {
     private final Map<String, Long> bytesByProtocol = new HashMap<>();
     private final Map<String, Long> packetsBySourceIp = new HashMap<>();
     private final Map<String, Long> packetsByDestinationIp = new HashMap<>();
-    private final Map<String, Long> packetsByConversation = new HashMap<>();
 
     // Tabela ARP observada: IP -> MAC
     private final Map<String, String> arpTable = new HashMap<>();
 
     // Estatísticas ICMP RTT por par de intervenientes
-    private final Map<String, RttStats> rttByHostPair = new HashMap<>();
+    private final Map<String, LongSummaryStatistics> rttByHostPair = new HashMap<>();
 
     public void register(PacketInfo info) {
         if (info == null) {
@@ -50,11 +50,6 @@ public class StatisticsService {
             packetsByDestinationIp.put(info.getDstIp(), packetsByDestinationIp.getOrDefault(info.getDstIp(), 0L) + 1);
         }
 
-        if (info.getSrcIp() != null && info.getDstIp() != null) {
-            String conversation = buildConversationKey(info);
-            packetsByConversation.put(conversation, packetsByConversation.getOrDefault(conversation, 0L) + 1);
-        }
-
         if ("ARP".equalsIgnoreCase(protocol)) {
             registerArp(info);
         }
@@ -76,7 +71,6 @@ public class StatisticsService {
         printMap("Bytes by protocol", bytesByProtocol);
         printMap("Top source IPs", packetsBySourceIp);
         printMap("Top destination IPs", packetsByDestinationIp);
-        printMap("Top conversations", packetsByConversation);
 
         printArpStats();
         printIcmpRttStats();
@@ -169,14 +163,8 @@ public class StatisticsService {
         }
 
         String hostPair = buildHostPairKey(info.getSrcIp(), info.getDstIp());
-        RttStats stats = rttByHostPair.get(hostPair);
-
-        if (stats == null) {
-            stats = new RttStats();
-            rttByHostPair.put(hostPair, stats);
-        }
-
-        stats.register(info.getRtt());
+        rttByHostPair.computeIfAbsent(hostPair, k -> new LongSummaryStatistics())
+                     .accept(info.getRtt());
     }
 
     private void printIcmpRttStats() {
@@ -192,14 +180,14 @@ public class StatisticsService {
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> {
-                    RttStats stats = entry.getValue();
+                    LongSummaryStatistics stats = entry.getValue();
                     System.out.printf(
                             "  %s: count=%d, avg=%.2f ms, min=%d ms, max=%d ms%n",
                             entry.getKey(),
-                            stats.count,
+                            stats.getCount(),
                             stats.getAverage(),
-                            stats.min,
-                            stats.max
+                            stats.getMin(),
+                            stats.getMax()
                     );
                 });
 
@@ -222,25 +210,6 @@ public class StatisticsService {
                 .forEach(entry -> System.out.println("  " + entry.getKey() + ": " + entry.getValue()));
 
         System.out.println();
-    }
-
-    private String buildConversationKey(PacketInfo info) {
-        String src = info.getSrcIp();
-        String dst = info.getDstIp();
-
-        if (info.getSrcPort() != null) {
-            src += ":" + info.getSrcPort();
-        }
-
-        if (info.getDstPort() != null) {
-            dst += ":" + info.getDstPort();
-        }
-
-        if (src.compareTo(dst) <= 0) {
-            return src + " <-> " + dst;
-        }
-
-        return dst + " <-> " + src;
     }
 
     private String buildHostPairKey(String ipA, String ipB) {
@@ -270,25 +239,4 @@ public class StatisticsService {
                 && !"ff:ff:ff:ff:ff:ff".equalsIgnoreCase(mac);
     }
 
-    private static class RttStats {
-        long count = 0;
-        long total = 0;
-        long min = Long.MAX_VALUE;
-        long max = Long.MIN_VALUE;
-
-        void register(long rtt) {
-            count++;
-            total += rtt;
-            min = Math.min(min, rtt);
-            max = Math.max(max, rtt);
-        }
-
-        double getAverage() {
-            if (count == 0) {
-                return 0;
-            }
-
-            return total / (double) count;
-        }
-    }
 }
