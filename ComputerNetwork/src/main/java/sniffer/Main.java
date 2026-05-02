@@ -39,8 +39,8 @@ public class Main {
 
             System.out.println();
             System.out.println("Application filters:");
-            String protocolFilter = askOptionAllowEmpty(sc, "Protocol (ARP/IPv4/ICMP/TCP/UDP or empty)",
-                new String[]{"ARP", "IPv4", "ICMP", "TCP", "UDP"});
+            String protocolFilter = askOptionAllowEmpty(sc, "Protocol (ARP/IPv4/IPv6/ICMP/ICMPv6/TCP/UDP or empty)",
+                new String[]{"ARP", "IPv4", "IPv6", "ICMP", "ICMPv6", "TCP", "UDP"});
             String ipFilter = askText(sc, "Source/destination IP (empty = no filter)", "");
             String macFilter = askText(sc, "Source/destination MAC (empty = no filter)", "");
 
@@ -62,7 +62,7 @@ public class Main {
     private static void printBanner() {
         System.out.println("========================================");
         System.out.println(" Packet Sniffer - Computer Networks     ");
-        System.out.println(" Protocols: ARP, IPv4, ICMP, TCP, UDP   ");
+        System.out.println(" Protocols: ARP, IPv4, IPv6, ICMP, ICMPv6, TCP, UDP ");
         System.out.println("========================================");
         System.out.println();
     }

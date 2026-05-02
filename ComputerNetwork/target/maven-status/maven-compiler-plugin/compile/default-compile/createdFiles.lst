@@ -1,5 +1,4 @@
 sniffer/analysis/RttAnalyzer.class
-sniffer/analysis/StatisticsService$RttStats.class
 sniffer/Main.class
 sniffer/capture/SnifferService.class
 sniffer/analysis/StatisticsService.class

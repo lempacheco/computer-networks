@@ -40,7 +40,7 @@ public class PacketFilter {
     }
 
     private boolean matchesIp(PacketInfo info) {
-        return ip.equals(info.getSrcIp()) || ip.equals(info.getDstIp());
+        return equalsIgnoreCase(ip, info.getSrcIp()) || equalsIgnoreCase(ip, info.getDstIp());
     }
 
     private boolean matchesMac(PacketInfo info) {

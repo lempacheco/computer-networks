@@ -3,7 +3,9 @@ package sniffer.analysis;
 import org.pcap4j.packet.ArpPacket;
 import org.pcap4j.packet.EthernetPacket;
 import org.pcap4j.packet.IcmpV4CommonPacket;
+import org.pcap4j.packet.IcmpV6CommonPacket;
 import org.pcap4j.packet.IpV4Packet;
+import org.pcap4j.packet.IpV6Packet;
 import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.UdpPacket;
@@ -31,6 +33,10 @@ public class PacketAnalyzer {
 
         if (packet.contains(IpV4Packet.class)) {
             return analyzeIpv4(packet, packet.get(IpV4Packet.class), info);
+        }
+
+        if (packet.contains(IpV6Packet.class)) {
+            return analyzeIpv6(packet, packet.get(IpV6Packet.class), info);
         }
 
         info.setProtocol("OTHER");
@@ -97,6 +103,58 @@ public class PacketAnalyzer {
         info.setProtocol("IPv4");
         info.setSummary("IPv4 packet, ttl=" + info.getTTL());
         return info;
+    }
+
+    private PacketInfo analyzeIpv6(Packet packet, IpV6Packet ipV6Packet, PacketInfo info) {
+        info.setSrcIp(ipV6Packet.getHeader().getSrcAddr().getHostAddress());
+        info.setDstIp(ipV6Packet.getHeader().getDstAddr().getHostAddress());
+        info.setTTL(ipV6Packet.getHeader().getHopLimit() & 0xFF);
+
+        if (packet.contains(IcmpV6CommonPacket.class)) {
+            return analyzeIcmpV6(packet.get(IcmpV6CommonPacket.class), info);
+        }
+
+        if (packet.contains(TcpPacket.class)) {
+            return analyzeTcp(packet.get(TcpPacket.class), info);
+        }
+
+        if (packet.contains(UdpPacket.class)) {
+            return analyzeUdp(packet.get(UdpPacket.class), info);
+        }
+
+        info.setProtocol("IPv6");
+        info.setSummary("IPv6 packet, hopLimit=" + info.getTTL());
+        return info;
+    }
+
+    private PacketInfo analyzeIcmpV6(IcmpV6CommonPacket icmpV6Packet, PacketInfo info) {
+        info.setProtocol("ICMPv6");
+
+        int type = icmpV6Packet.getHeader().getType().value() & 0xFF;
+        int code = icmpV6Packet.getHeader().getCode().value() & 0xFF;
+
+        info.setIcmpType(type);
+        info.setIcmpCode(code);
+
+        info.setSummary("ICMPv6 type=" + type + ", code=" + code + " - " + getIcmpV6Description(type));
+        return info;
+    }
+
+    private String getIcmpV6Description(int type) {
+        switch (type) {
+            case 1:   return "destination unreachable";
+            case 2:   return "packet too big";
+            case 3:   return "time exceeded";
+            case 4:   return "parameter problem";
+            case 128: return "echo request (ping6 request)";
+            case 129: return "echo reply (ping6 response)";
+            case 133: return "router solicitation";
+            case 134: return "router advertisement";
+            case 135: return "neighbor solicitation";
+            case 136: return "neighbor advertisement";
+            case 137: return "redirect message";
+            default:  return "unknown ICMPv6 message";
+        }
     }
 
     private PacketInfo analyzeIcmp(IcmpV4CommonPacket icmpPacket, PacketInfo info) {
