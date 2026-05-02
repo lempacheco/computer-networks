@@ -1,0 +1,8 @@
+2026-05-02 11:13:56.784 | eth0 | ICMP | MAC 00:00:00:aa:00:00 -> 00:00:00:aa:00:02 | IP 10.0.0.20 -> 10.0.0.21 | ttl=64 | len=98 | ICMP type=8, code=0 - echo request (ping request) | rtt=-
+2026-05-02 11:13:56.784 | eth0 | ICMP | MAC 00:00:00:aa:00:02 -> 00:00:00:aa:00:00 | IP 10.0.0.21 -> 10.0.0.20 | ttl=64 | len=98 | ICMP type=0, code=0 - echo reply (ping response) | rtt=0 ms
+2026-05-02 11:13:57.809 | eth0 | ICMP | MAC 00:00:00:aa:00:00 -> 00:00:00:aa:00:02 | IP 10.0.0.20 -> 10.0.0.21 | ttl=64 | len=98 | ICMP type=8, code=0 - echo request (ping request) | rtt=-
+2026-05-02 11:13:57.809 | eth0 | ICMP | MAC 00:00:00:aa:00:02 -> 00:00:00:aa:00:00 | IP 10.0.0.21 -> 10.0.0.20 | ttl=64 | len=98 | ICMP type=0, code=0 - echo reply (ping response) | rtt=0 ms
+2026-05-02 11:13:58.833 | eth0 | ICMP | MAC 00:00:00:aa:00:00 -> 00:00:00:aa:00:02 | IP 10.0.0.20 -> 10.0.0.21 | ttl=64 | len=98 | ICMP type=8, code=0 - echo request (ping request) | rtt=-
+2026-05-02 11:13:58.833 | eth0 | ICMP | MAC 00:00:00:aa:00:02 -> 00:00:00:aa:00:00 | IP 10.0.0.21 -> 10.0.0.20 | ttl=64 | len=98 | ICMP type=0, code=0 - echo reply (ping response) | rtt=0 ms
+2026-05-02 11:13:59.857 | eth0 | ICMP | MAC 00:00:00:aa:00:00 -> 00:00:00:aa:00:02 | IP 10.0.0.20 -> 10.0.0.21 | ttl=64 | len=98 | ICMP type=8, code=0 - echo request (ping request) | rtt=-
+2026-05-02 11:13:59.857 | eth0 | ICMP | MAC 00:00:00:aa:00:02 -> 00:00:00:aa:00:00 | IP 10.0.0.21 -> 10.0.0.20 | ttl=64 | len=98 | ICMP type=0, code=0 - echo reply (ping response) | rtt=0 ms

@@ -1,5 +1,4 @@
 sniffer/analysis/RttAnalyzer.class
-sniffer/analysis/StatisticsService$RttStats.class
 sniffer/Main.class
 sniffer/capture/SnifferService.class
 sniffer/analysis/StatisticsService.class
@@ -7,5 +6,5 @@ sniffer/analysis/PacketAnalyzer.class
 sniffer/model/PacketInfo.class
 sniffer/output/PacketFormatter.class
 sniffer/filter/PacketFilter.class
-sniffer/capture/InterfaceManager.class
 sniffer/output/PacketOutput.class
+sniffer/capture/InterfaceManager.class
