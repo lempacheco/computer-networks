@@ -68,7 +68,6 @@ public class PacketAnalyzer {
         info.setDstMac(targetMac);
         info.setSrcIp(senderIp);
         info.setDstIp(targetIp);
-        info.setArpOperation(operation.toString());
 
         if (ArpOperation.REQUEST.equals(operation)) {
             info.setArpOperation("REQUEST");
@@ -77,7 +76,8 @@ public class PacketAnalyzer {
             info.setArpOperation("REPLY");
             info.setSummary("ARP reply: " + senderIp + " is at " + senderMac);
         } else {
-            info.setSummary("ARP " + operation+ ": sender " + senderIp + " is at " + senderMac+ ", target " + targetIp + " / " + targetMac);
+            info.setArpOperation(operation.toString());
+            info.setSummary("ARP " + operation + ": sender " + senderIp + " is at " + senderMac + ", target " + targetIp + " / " + targetMac);
         }
 
         return info;

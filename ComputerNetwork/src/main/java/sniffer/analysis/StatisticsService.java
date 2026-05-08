@@ -22,10 +22,8 @@ public class StatisticsService {
     private final Map<String, Long> packetsBySourceIp = new HashMap<>();
     private final Map<String, Long> packetsByDestinationIp = new HashMap<>();
 
-    // Tabela ARP observada: IP -> MAC
     private final Map<String, String> arpTable = new HashMap<>();
 
-    // Estatísticas ICMP RTT por par de intervenientes
     private final Map<String, LongSummaryStatistics> rttByHostPair = new HashMap<>();
 
     public void register(PacketInfo info) {
@@ -68,7 +66,7 @@ public class StatisticsService {
         printDurationStats();
 
         printProtocolStats();
-        printMap("Bytes by protocol", bytesByProtocol);
+        printBytesByProtocol();
         printMap("Top source IPs", packetsBySourceIp);
         printMap("Top destination IPs", packetsByDestinationIp);
 
@@ -117,6 +115,26 @@ public class StatisticsService {
                 .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
                 .forEach(entry -> {
                     double percentage = totalPackets == 0 ? 0 : (entry.getValue() * 100.0) / totalPackets;
+                    System.out.printf("  %s: %d (%.2f%%)%n", entry.getKey(), entry.getValue(), percentage);
+                });
+
+        System.out.println();
+    }
+
+    private void printBytesByProtocol() {
+        System.out.println("Bytes by protocol:");
+
+        if (bytesByProtocol.isEmpty()) {
+            System.out.println("  none");
+            System.out.println();
+            return;
+        }
+
+        bytesByProtocol.entrySet()
+                .stream()
+                .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
+                .forEach(entry -> {
+                    double percentage = totalBytes == 0 ? 0 : (entry.getValue() * 100.0) / totalBytes;
                     System.out.printf("  %s: %d (%.2f%%)%n", entry.getKey(), entry.getValue(), percentage);
                 });
 

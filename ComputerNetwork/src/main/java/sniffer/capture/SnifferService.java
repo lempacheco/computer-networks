@@ -68,9 +68,8 @@ public class SnifferService {
                     info.setCaptureTimestamp(timestamp);
                     info.setInterfaceName(nif.getName());
 
-                    PacketInfo matchedRequest = rttAnalyzer.calculateRtt(packet, info, timestamp);
-
                     if (packetFilter == null || packetFilter.matches(info)) {
+                        PacketInfo matchedRequest = rttAnalyzer.calculateRtt(packet, info, timestamp);
                         if (matchedRequest != null) {
                             packetOutput.outputIcmpMatch(matchedRequest, info);
                         } else {
