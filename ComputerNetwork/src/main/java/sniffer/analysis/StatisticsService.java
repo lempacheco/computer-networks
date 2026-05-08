@@ -27,9 +27,7 @@ public class StatisticsService {
     private final Map<String, LongSummaryStatistics> rttByHostPair = new HashMap<>();
 
     public void register(PacketInfo info) {
-        if (info == null) {
-            return;
-        }
+        if (info == null) return;
 
         updateCaptureTimes();
 
@@ -37,24 +35,17 @@ public class StatisticsService {
         totalBytes += info.getLength();
 
         String protocol = valueOrUnknown(info.getProtocol());
-        packetsByProtocol.put(protocol, packetsByProtocol.getOrDefault(protocol, 0L) + 1);
-        bytesByProtocol.put(protocol, bytesByProtocol.getOrDefault(protocol, 0L) + info.getLength());
+        packetsByProtocol.merge(protocol, 1L, Long::sum);
+        bytesByProtocol.merge(protocol, (long) info.getLength(), Long::sum);
 
-        if (info.getSrcIp() != null && !info.getSrcIp().isBlank()) {
-            packetsBySourceIp.put(info.getSrcIp(), packetsBySourceIp.getOrDefault(info.getSrcIp(), 0L) + 1);
-        }
+        if (info.getSrcIp() != null && !info.getSrcIp().isBlank())
+            packetsBySourceIp.merge(info.getSrcIp(), 1L, Long::sum);
 
-        if (info.getDstIp() != null && !info.getDstIp().isBlank()) {
-            packetsByDestinationIp.put(info.getDstIp(), packetsByDestinationIp.getOrDefault(info.getDstIp(), 0L) + 1);
-        }
+        if (info.getDstIp() != null && !info.getDstIp().isBlank())
+            packetsByDestinationIp.merge(info.getDstIp(), 1L, Long::sum);
 
-        if ("ARP".equalsIgnoreCase(protocol)) {
-            registerArp(info);
-        }
-
-        if ("ICMP".equalsIgnoreCase(protocol) && info.getRtt() != null) {
-            registerIcmpRtt(info);
-        }
+        if ("ARP".equalsIgnoreCase(protocol)) registerArp(info);
+        if ("ICMP".equalsIgnoreCase(protocol) && info.getRtt() != null) registerIcmpRtt(info);
     }
 
     public void printSummary() {
@@ -64,12 +55,10 @@ public class StatisticsService {
         System.out.println("Total bytes: " + totalBytes);
 
         printDurationStats();
-
-        printProtocolStats();
-        printBytesByProtocol();
+        printCountMap("Packets by protocol", packetsByProtocol, totalPackets);
+        printCountMap("Bytes by protocol", bytesByProtocol, totalBytes);
         printMap("Top source IPs", packetsBySourceIp);
         printMap("Top destination IPs", packetsByDestinationIp);
-
         printArpStats();
         printIcmpRttStats();
 
@@ -78,65 +67,52 @@ public class StatisticsService {
 
     private void updateCaptureTimes() {
         long now = System.currentTimeMillis();
-
-        if (firstPacketTimeMs == null) {
-            firstPacketTimeMs = now;
-        }
-
+        if (firstPacketTimeMs == null) firstPacketTimeMs = now;
         lastPacketTimeMs = now;
     }
 
     private void printDurationStats() {
-        if (firstPacketTimeMs == null || lastPacketTimeMs == null || totalPackets == 0) {
-            return;
-        }
+        if (firstPacketTimeMs == null || lastPacketTimeMs == null || totalPackets == 0) return;
 
         double durationSeconds = Math.max(0.001, (lastPacketTimeMs - firstPacketTimeMs) / 1000.0);
-        double packetsPerSecond = totalPackets / durationSeconds;
-        double bytesPerSecond = totalBytes / durationSeconds;
-
         System.out.printf("Capture duration: %.3f s%n", durationSeconds);
-        System.out.printf("Packets/sec: %.2f%n", packetsPerSecond);
-        System.out.printf("Bytes/sec: %.2f%n", bytesPerSecond);
+        System.out.printf("Packets/sec: %.2f%n", totalPackets / durationSeconds);
+        System.out.printf("Bytes/sec: %.2f%n", totalBytes / durationSeconds);
         System.out.println();
     }
 
-    private void printProtocolStats() {
-        System.out.println("Packets by protocol:");
+    private void printCountMap(String title, Map<String, Long> map, long total) {
+        System.out.println(title + ":");
 
-        if (packetsByProtocol.isEmpty()) {
+        if (map.isEmpty()) {
             System.out.println("  none");
             System.out.println();
             return;
         }
 
-        packetsByProtocol.entrySet()
-                .stream()
+        map.entrySet().stream()
                 .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
                 .forEach(entry -> {
-                    double percentage = totalPackets == 0 ? 0 : (entry.getValue() * 100.0) / totalPackets;
-                    System.out.printf("  %s: %d (%.2f%%)%n", entry.getKey(), entry.getValue(), percentage);
+                    double pct = total == 0 ? 0 : (entry.getValue() * 100.0) / total;
+                    System.out.printf("  %s: %d (%.2f%%)%n", entry.getKey(), entry.getValue(), pct);
                 });
 
         System.out.println();
     }
 
-    private void printBytesByProtocol() {
-        System.out.println("Bytes by protocol:");
+    private void printMap(String title, Map<String, Long> map) {
+        System.out.println(title + ":");
 
-        if (bytesByProtocol.isEmpty()) {
+        if (map.isEmpty()) {
             System.out.println("  none");
             System.out.println();
             return;
         }
 
-        bytesByProtocol.entrySet()
-                .stream()
+        map.entrySet().stream()
                 .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
-                .forEach(entry -> {
-                    double percentage = totalBytes == 0 ? 0 : (entry.getValue() * 100.0) / totalBytes;
-                    System.out.printf("  %s: %d (%.2f%%)%n", entry.getKey(), entry.getValue(), percentage);
-                });
+                .limit(10)
+                .forEach(entry -> System.out.println("  " + entry.getKey() + ": " + entry.getValue()));
 
         System.out.println();
     }
@@ -148,9 +124,8 @@ public class StatisticsService {
             arpReplies++;
         }
 
-        if (isValidIp(info.getSrcIp()) && isValidMac(info.getSrcMac())) {
+        if (isValidIp(info.getSrcIp()) && isValidMac(info.getSrcMac()))
             arpTable.put(info.getSrcIp(), info.getSrcMac());
-        }
     }
 
     private void printArpStats() {
@@ -167,8 +142,7 @@ public class StatisticsService {
             return;
         }
 
-        arpTable.entrySet()
-                .stream()
+        arpTable.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> System.out.println("  " + entry.getKey() + " -> " + entry.getValue()));
 
@@ -176,13 +150,10 @@ public class StatisticsService {
     }
 
     private void registerIcmpRtt(PacketInfo info) {
-        if (!isValidIp(info.getSrcIp()) || !isValidIp(info.getDstIp())) {
-            return;
-        }
+        if (!isValidIp(info.getSrcIp()) || !isValidIp(info.getDstIp())) return;
 
-        String hostPair = buildHostPairKey(info.getSrcIp(), info.getDstIp());
-        rttByHostPair.computeIfAbsent(hostPair, k -> new LongSummaryStatistics())
-                     .accept(info.getRtt());
+        String key = buildHostPairKey(info.getSrcIp(), info.getDstIp());
+        rttByHostPair.computeIfAbsent(key, k -> new LongSummaryStatistics()).accept(info.getRtt());
     }
 
     private void printIcmpRttStats() {
@@ -194,56 +165,23 @@ public class StatisticsService {
             return;
         }
 
-        rttByHostPair.entrySet()
-                .stream()
+        rttByHostPair.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> {
                     LongSummaryStatistics stats = entry.getValue();
-                    System.out.printf(
-                            "  %s: count=%d, avg=%.2f ms, min=%d ms, max=%d ms%n",
-                            entry.getKey(),
-                            stats.getCount(),
-                            stats.getAverage(),
-                            stats.getMin(),
-                            stats.getMax()
-                    );
+                    System.out.printf("  %s: count=%d, avg=%.2f ms, min=%d ms, max=%d ms%n",
+                            entry.getKey(), stats.getCount(), stats.getAverage(), stats.getMin(), stats.getMax());
                 });
 
         System.out.println();
     }
 
-    private void printMap(String title, Map<String, Long> map) {
-        System.out.println(title + ":");
-
-        if (map.isEmpty()) {
-            System.out.println("  none");
-            System.out.println();
-            return;
-        }
-
-        map.entrySet()
-                .stream()
-                .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
-                .limit(10)
-                .forEach(entry -> System.out.println("  " + entry.getKey() + ": " + entry.getValue()));
-
-        System.out.println();
-    }
-
     private String buildHostPairKey(String ipA, String ipB) {
-        if (ipA.compareTo(ipB) <= 0) {
-            return ipA + " <-> " + ipB;
-        }
-
-        return ipB + " <-> " + ipA;
+        return ipA.compareTo(ipB) <= 0 ? ipA + " <-> " + ipB : ipB + " <-> " + ipA;
     }
 
     private String valueOrUnknown(String value) {
-        if (value == null || value.isBlank()) {
-            return "UNKNOWN";
-        }
-
-        return value;
+        return (value == null || value.isBlank()) ? "UNKNOWN" : value;
     }
 
     private boolean isValidIp(String ip) {
@@ -256,5 +194,4 @@ public class StatisticsService {
                 && !"00:00:00:00:00:00".equalsIgnoreCase(mac)
                 && !"ff:ff:ff:ff:ff:ff".equalsIgnoreCase(mac);
     }
-
 }
