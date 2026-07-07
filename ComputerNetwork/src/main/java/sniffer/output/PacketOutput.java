@@ -3,6 +3,7 @@ package sniffer.output;
 import sniffer.model.PacketInfo;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -23,8 +24,22 @@ public class PacketOutput {
 
         if (logMode) {
             try {
-                this.writer = new BufferedWriter(new FileWriter(logFileName, true));
+                File capturesDir = new File("captures");
+
+            if (!capturesDir.exists()) {
+                capturesDir.mkdirs();
+            }
+
+            File file = new File(capturesDir, logFileName);
+
+            boolean isNew = !file.exists() || file.length() == 0;
+
+            this.writer = new BufferedWriter(new FileWriter(file, true));
+
+            if (isNew) {
                 writeHeader();
+            }
+
             } catch (IOException e) {
                 throw new UncheckedIOException("Error opening log file: " + logFileName, e);
             }
@@ -34,19 +49,21 @@ public class PacketOutput {
     }
 
     public void write(PacketInfo info){
-        String formattedPacket = format(info);
-
         if(livMode){
-            System.out.println(formattedPacket);
+            System.out.println(formatter.formatTxt(info));
         }
 
+        writeToFile(info);
+    }
+
+    private void writeToFile(PacketInfo info) {
         if(logMode && writer != null){
             try{
-                writer.write(formattedPacket);
+                writer.write(format(info));
                 writer.newLine();
                 writer.flush();
             } catch (IOException e) {
-            throw new UncheckedIOException("Error writing to log file.", e);
+                throw new UncheckedIOException("Error writing to log file.", e);
             }
         }
     }
@@ -127,6 +144,6 @@ public class PacketOutput {
             System.out.println();
         }
 
-        write(reply);
+        writeToFile(reply);
     }
 }
